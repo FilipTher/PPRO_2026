@@ -1,0 +1,32 @@
+# Environment files
+.env
+.env*.local
+
+# IDE and Editor files
+.idea/
+.vscode/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# OS generated files
+Thumbs.db
+[Dd]esktop.ini
+.DS_Store
+
+# Common build outputs
+bin/
+obj/
+dist/
+build/
+target/
+out/
+node_modules/
+__pycache__/
+*.pyc
+
+# Logs and databases
+*.log
+*.sqlite
+*.db
