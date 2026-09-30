@@ -1,0 +1,121 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Product {
+  id              Int               @id @default(autoincrement())
+  code            String            @unique
+  name            String
+  description     String?
+  purchasePrice   Float
+  sellingPrice    Float
+  minStockLimit   Int               @default(5)
+  isActive        Boolean           @default(true)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  isVariantOfId   Int?
+  parentProduct   Product?          @relation("ProductVariants", fields: [isVariantOfId], references: [id])
+  variants        Product[]         @relation("ProductVariants")
+  
+  categories      ProductCategory[]
+  stockItems      WarehouseStock[]
+  orderItems      OrderItem[]
+  movements       StockMovement[]
+}
+
+model Category {
+  id          Int               @id @default(autoincrement())
+  name        String            @unique
+  description String?
+  products    ProductCategory[]
+}
+
+model ProductCategory {
+  productId  Int
+  categoryId Int
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([productId, categoryId])
+}
+
+model Warehouse {
+  id          Int              @id @default(autoincrement())
+  name        String
+  code        String           @unique
+  address     String
+  isSeasonal  Boolean          @default(false)
+  stockItems  WarehouseStock[]
+  orderItems  OrderItem[]
+  movements   StockMovement[]
+}
+
+model WarehouseStock {
+  id               Int       @id @default(autoincrement())
+  warehouseId      Int
+  productId        Int
+  physicalQuantity Int       @default(0)
+  reservedQuantity Int       @default(0)
+  warehouse        Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  product          Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([warehouseId, productId])
+}
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  phone     String
+  street    String
+  city      String
+  zip       String
+  orders    Order[]
+  createdAt DateTime @default(now())
+}
+
+model Order {
+  id          Int             @id @default(autoincrement())
+  orderNumber String          @unique
+  customerId  Int
+  status      String          @default("PENDING")
+  customer    Customer        @relation(fields: [customerId], references: [id])
+  items       OrderItem[]
+  movements   StockMovement[]
+  createdAt   DateTime        @default(now())
+  shippedAt   DateTime?
+}
+
+model OrderItem {
+  id          Int       @id @default(autoincrement())
+  orderId     Int
+  productId   Int
+  warehouseId Int
+  quantity    Int
+  unitPrice   Float
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product   @relation(fields: [productId], references: [id])
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+}
+
+model StockMovement {
+  id             Int       @id @default(autoincrement())
+  productId      Int
+  warehouseId    Int
+  orderId        Int?
+  movementType   String
+  quantityChange Int
+  quantityAfter  Int
+  reason         String?
+  note           String?
+  createdAt      DateTime  @default(now())
+  product        Product   @relation(fields: [productId], references: [id])
+  warehouse      Warehouse @relation(fields: [warehouseId], references: [id])
+  order          Order?    @relation(fields: [orderId], references: [id])
+}

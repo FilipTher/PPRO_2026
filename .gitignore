@@ -26,7 +26,15 @@ node_modules/
 __pycache__/
 *.pyc
 
+# Angular cache
+.angular/
+
 # Logs and databases
 *.log
 *.sqlite
 *.db
+*.db-journal
+*.db-wal
+*.db-shm
+backend/data/*.db
+
