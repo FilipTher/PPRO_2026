@@ -92,19 +92,46 @@ Tato sekce zaznamenává klíčová architektonická rozhodnutí a řešení ote
 | ADR-005 | Záporný stav a inventura (Bod 3) | **Záporný stav je v systému striktně zakázán** integritním omezením (`physicalQuantity >= 0`). Nesoulad v garáži se řeší výhradně modulem **Inventura**, který zaznamená inventurní rozdíl jako samostatný auditovaný pohyb s odůvodněním. | K odsouhlasení |
 | ADR-006 | Varianty produktu (Bod 4) | Varianty (např. 3 barvy téže káči) jsou modelovány jako samostatné produkty s vlastním kódem a skladovou zásobou, sdílející volitelnou vazbu na nadřazený produkt (`parentProductId`). | K odsouhlasení |
 | ADR-007 | Změna objednávky po zaplacení (Bod 5) | Editace objednávky po potvrzení/zaplacení je povolena pouze obsluze skladu do okamžiku expedice. Jakákoli změna položek automaticky přepočítá rezervace a zaznamená revizi. Po expedici je změna možná pouze standardní vratkou/reklamací. | K odsouhlasení |
+| ADR-008 | Vertikální řez pro demo (Produkt) | Pro první schválení klientem byl realizován kompletní vertikální řez entitou `Product` (Prisma SQLite -> Repozitář -> Doménová služba s validacemi -> Express REST API -> Angular SPA). Pokryto 12 unit a integračními testy. | Schváleno |
 
 ---
 
 ## 5. Příručka pro spuštění a vývoj
 
 ### Požadavky:
-- Docker & Docker Compose
-- Git
+- Node.js (v20+) a npm
+- Docker & Docker Compose (volitelně pro kontejnerizaci)
 
-### Spuštění projektu:
+### 1. Spuštění v Dockeru (jediným příkazem):
 ```bash
 docker compose up --build
 ```
+- Aplikace (Angular UI): `http://localhost:4200`
+- REST API (Backend): `http://localhost:3000/api/products`
 
-### Spuštění testů:
-*(Bude doplněno dle zvoleného jazyka/frameworku)*
+### 2. Spuštění lokálně během vývoje:
+
+**Spuštění backendu:**
+```bash
+cd backend
+npm install
+npx prisma migrate dev
+npx ts-node prisma/seed.ts
+npm run dev
+```
+
+**Spuštění frontendu:**
+```bash
+cd frontend
+npm install
+npm start
+```
+Frontend se spustí na `http://localhost:4200` a automaticky přesměrovává volání `/api/*` na backend port 3000.
+
+### 3. Spuštění automatizovaných testů:
+```bash
+cd backend
+npm test
+```
+Provede všechny unit testy doménových pravidel i integrační HTTP testy nad SQLite.
+
