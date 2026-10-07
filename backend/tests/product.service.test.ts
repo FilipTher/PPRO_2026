@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach } from '@jest/globals';
 import { ProductService, DomainValidationError, NotFoundError, ConflictError } from '../src/services/product.service';
 import { IProductRepository } from '../src/repositories/product.repository';
 import { Product } from '@prisma/client';

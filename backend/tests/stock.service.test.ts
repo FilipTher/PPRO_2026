@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach } from '@jest/globals';
 import { StockService } from '../src/services/stock.service';
 import {
   IStockRepository,
