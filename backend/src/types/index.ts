@@ -21,3 +21,5 @@ export interface ProductFilterDto {
   search?: string;
   isActive?: boolean;
 }
+
+export * from './stock.types';
