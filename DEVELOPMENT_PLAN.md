@@ -3,6 +3,11 @@
 
 Tento dokument slouží jako **kompletní vývojová mapa a zásobník mikrozadání** pro inkrementální vývoj skladového systému. Projekt striktně dodržuje třívrstvou architekturu, relační databázi s migracemi, automatizované testování a jednopříkazové spuštění přes Docker Compose.
 
+> **AKTUÁLNÍ STAV VÝVOJE (Kde jsme skončili)**:
+> - **Poslední dokončený krok**: **Krok 1.2: Doménová služba `StockService` (Příjem na sklad & Audit log)** `[DOKONČENO]`
+> - **Příští krok na řadě**: **Krok 1.3: Přesun mezi sklady a Modul Inventury (ADR-003, ADR-005)**
+> - **Celkem automatizovaných testů**: **22 testů** (100% průchodnost)
+
 ---
 
 ## Přehled fází a stavu projektu
@@ -10,7 +15,7 @@ Tento dokument slouží jako **kompletní vývojová mapa a zásobník mikrozad�
 | Fáze | Název fáze | Zaměření | Stav |
 |---|---|---|---|
 | **Fáze 0** | **Projektový základ & Vertikální řez Produkt** | Schéma DB, Docker, architektura vrstev, entita `Product` (CRUD, validace cen, soft delete, 12 testů, Angular UI). | **HOTOVO** |
-| **Fáze 1** | **Jádro skladových zásob a pohybů (Stock & Movements)** | Disponibilita vs. fyzický stav, zákaz záporných stavů, naskladnění, přesun mezi sklady HK a Třebechovice, inventura a audit log. | **PŘIPRAVENO** |
+| **Fáze 1** | **Jádro skladových zásob a pohybů (Stock & Movements)** | Disponibilita vs. fyzický stav, zákaz záporných stavů, naskladnění, přesun mezi sklady HK a Třebechovice, inventura a audit log. | **ROZPRACOVÁNO (Kroky 1.1 a 1.2 hotovy)** |
 | **Fáze 2** | **Objednávky a rezervace (Kde se návrh láme)** | Životní cyklus objednávky (`PENDING` -> `RESERVED` -> `SHIPPED` / `CANCELLED`), fixace cen položek, odmítnutí při nedostatku, objednávka ze 2 skladů. | **PŘIPRAVENO** |
 | **Fáze 3** | **Reporting a manažerské alerty** | Alerty zásob pod minimem („co hoří“), měsíční obrat po kategoriích, doporučení k doobjednání. | **PŘIPRAVENO** |
 | **Fáze 4** | **Frontend aplikace (Angular SPA & Mobilní UI)** | Modulární routing, zobrazení skladů, dialog naskladnění a přesunu, modul inventury, expedice objednávek, manažerský dashboard. | **PŘIPRAVENO** |
@@ -42,7 +47,7 @@ V této fázi vybudujeme doménovou logiku pro práci se sklady a pohyby. Zde se
 
 ---
 
-### Krok 1.2: Doménová služba `StockService` (Příjem na sklad & Audit log)
+### Krok 1.2: Doménová služba `StockService` (Příjem na sklad & Audit log) [DOKONČENO]
 - **Cíl**: Implementovat čistou doménovou logiku pro příjem zboží na sklad (`RECEIPT`) s garancí neměnné historie a zákazu záporných stavů.
 - **Co se vytvoří / upraví**:
   - `backend/src/services/stock.service.ts`: Metoda `receiveStock(dto: ReceiveStockDto)`.

@@ -2,26 +2,8 @@ import { Product } from '@prisma/client';
 import { IProductRepository } from '../repositories/product.repository';
 import { CreateProductDto, UpdateProductDto, ProductFilterDto } from '../types';
 
-export class DomainValidationError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'DomainValidationError';
-  }
-}
-
-export class NotFoundError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'NotFoundError';
-  }
-}
-
-export class ConflictError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'ConflictError';
-  }
-}
+import { DomainValidationError, NotFoundError, ConflictError } from '../errors';
+export { DomainValidationError, NotFoundError, ConflictError };
 
 export class ProductService {
   constructor(private readonly productRepository: IProductRepository) {}
