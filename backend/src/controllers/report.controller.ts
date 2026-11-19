@@ -22,6 +22,18 @@ export class ReportController {
     }
   };
 
+  /**
+   * GET /api/reports/low-stock – kritické zásoby pod minimem („co hoří“)
+   */
+  getLowStock = async (_req: Request, res: Response) => {
+    try {
+      const alerts = await this.reportService.getLowStockAlerts();
+      res.json({ success: true, data: alerts });
+    } catch (err: any) {
+      this.handleError(res, err);
+    }
+  };
+
   private optionalInt(value: unknown, label: string, fallback: number): number {
     if (value === undefined || value === '') {
       return fallback;

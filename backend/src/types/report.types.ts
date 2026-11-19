@@ -25,3 +25,25 @@ export interface MonthlyCategoryRevenueDto {
   totalQuantity: number;
   categories: CategoryRevenueDto[];
 }
+
+export type LowStockSeverity = 'CRITICAL' | 'WARNING';
+
+export interface LowStockAlertDto {
+  productId: number;
+  productCode: string;
+  productName: string;
+  totalPhysicalQuantity: number;
+  totalReservedQuantity: number;
+  totalAvailableQuantity: number;
+  minStockLimit: number;
+  recommendedQuantity: number;
+  severity: LowStockSeverity;
+  stocks: {
+    warehouseId: number;
+    warehouseCode: string;
+    warehouseName: string;
+    physicalQuantity: number;
+    reservedQuantity: number;
+    availableQuantity: number;
+  }[];
+}

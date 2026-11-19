@@ -37,4 +37,37 @@ describe('Reports API (měsíční obrat po kategoriích)', () => {
     const badYear = await request(app).get('/api/reports/category-turnover?year=abc');
     expect(badYear.status).toBe(400);
   });
+
+  it('GET /api/reports/low-stock by měl nahlásit produkt bez zásoby jako CRITICAL', async () => {
+    const created = await request(app).post('/api/products').send({
+      code: `TEST-LOWSTOCK-${Date.now()}`,
+      name: 'Hračka bez zásoby',
+      purchasePrice: 10,
+      sellingPrice: 20
+    });
+    const productId = created.body.data.id;
+
+    try {
+      const res = await request(app).get('/api/reports/low-stock');
+      const alert = res.body.data.find((a: { productId: number }) => a.productId === productId);
+
+      expect(res.status).toBe(200);
+      expect(alert).toBeDefined();
+      expect(alert.totalPhysicalQuantity).toBe(0);
+      expect(alert.severity).toBe('CRITICAL');
+      // výchozí minimum je 5 ks -> doporučeno doobjednat 5 ks
+      expect(alert.recommendedQuantity).toBe(5);
+    } finally {
+      await prisma.product.delete({ where: { id: productId } });
+    }
+  });
+
+  it('GET /api/reports/low-stock by neměl hlásit seed produkty se zásobou 20 ks', async () => {
+    const res = await request(app).get('/api/reports/low-stock');
+
+    expect(res.status).toBe(200);
+    expect(res.body.data.some((a: { productCode: string }) => a.productCode === 'KACA-BUK-01')).toBe(
+      false
+    );
+  });
 });

@@ -4,9 +4,9 @@
 Tento dokument slouží jako **kompletní vývojová mapa a zásobník mikrozadání** pro inkrementální vývoj skladového systému. Projekt striktně dodržuje třívrstvou architekturu, relační databázi s migracemi, automatizované testování a jednopříkazové spuštění přes Docker Compose.
 
 > **AKTUÁLNÍ STAV VÝVOJE (Kde jsme skončili)**:
-> - **Poslední dokončený krok**: **Krok 3.1 – Měsíční obrat po kategoriích** `[DOKONČENO]`
-> - **Příští krok na řadě**: **Krok 3.2: Vyhodnocení kritických zásob pod minimem („Co hoří“)**
-> - **Celkem automatizovaných testů**: **122 testů** (100% průchodnost)
+> - **Poslední dokončený krok**: **Krok 3.2 – Alerty kritických zásob („Co hoří“)** `[DOKONČENO]`
+> - **Příští krok na řadě**: **Krok 4.1: Routing, Navigace a Responzivní Shell aplikace**
+> - **Celkem automatizovaných testů**: **128 testů** (100% průchodnost)
 
 ---
 

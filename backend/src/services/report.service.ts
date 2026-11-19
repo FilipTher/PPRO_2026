@@ -1,9 +1,13 @@
 import { IReportRepository } from '../repositories/report.repository';
-import { MonthlyCategoryRevenueDto } from '../types/report.types';
+import { StockService } from './stock.service';
+import { LowStockAlertDto, MonthlyCategoryRevenueDto } from '../types/report.types';
 import { DomainValidationError } from '../errors';
 
 export class ReportService {
-  constructor(private readonly reportRepository: IReportRepository) {}
+  constructor(
+    private readonly reportRepository: IReportRepository,
+    private readonly stockService: StockService
+  ) {}
 
   /**
    * Měsíční obrat po kategoriích.
@@ -40,6 +44,38 @@ export class ReportService {
         }))
         .sort((a, b) => b.revenue - a.revenue)
     };
+  }
+
+  /**
+   * Kritické zásoby („co hoří“): produkty, jejichž celková fyzická zásoba
+   * napříč sklady klesla na minimum nebo pod něj.
+   * Závažnost: CRITICAL = žádný kus na skladech, WARNING = na minimu/pod ním.
+   * Doporučené množství doplní stav na minimum, nejméně 1 kus.
+   */
+  async getLowStockAlerts(): Promise<LowStockAlertDto[]> {
+    const overview = await this.stockService.getStockOverview();
+
+    return overview
+      .filter((product) => product.isLowStock)
+      .map((product): LowStockAlertDto => ({
+        productId: product.productId,
+        productCode: product.productCode,
+        productName: product.productName,
+        totalPhysicalQuantity: product.totalPhysicalQuantity,
+        totalReservedQuantity: product.totalReservedQuantity,
+        totalAvailableQuantity: product.totalAvailableQuantity,
+        minStockLimit: product.minStockLimit,
+        recommendedQuantity: Math.max(product.minStockLimit - product.totalPhysicalQuantity, 1),
+        severity: product.totalPhysicalQuantity === 0 ? 'CRITICAL' : 'WARNING',
+        stocks: product.stocks
+      }))
+      .sort((a, b) =>
+        a.severity === b.severity
+          ? a.totalPhysicalQuantity - b.totalPhysicalQuantity
+          : a.severity === 'CRITICAL'
+            ? -1
+            : 1
+      );
   }
 }
 

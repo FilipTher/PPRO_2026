@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
 import { ReportService } from '../src/services/report.service';
+import { StockService } from '../src/services/stock.service';
 import { IReportRepository } from '../src/repositories/report.repository';
-import { ShippedRevenueSummary } from '../src/types/report.types';
+import { ProductStockOverviewDto, ShippedRevenueSummary } from '../src/types';
 import { DomainValidationError } from '../src/errors';
 
 class MockReportRepository implements IReportRepository {
@@ -16,13 +17,23 @@ class MockReportRepository implements IReportRepository {
   }
 }
 
+class MockStockService {
+  overview: ProductStockOverviewDto[] = [];
+
+  async getStockOverview(): Promise<ProductStockOverviewDto[]> {
+    return this.overview;
+  }
+}
+
 describe('ReportService (měsíční obrat po kategoriích)', () => {
   let repository: MockReportRepository;
+  let stockService: MockStockService;
   let service: ReportService;
 
   beforeEach(() => {
     repository = new MockReportRepository();
-    service = new ReportService(repository);
+    stockService = new MockStockService();
+    service = new ReportService(repository, stockService as unknown as StockService);
   });
 
   it('měl by spočítat podíl kategorií na celkových tržbách a seřadit je od nejvyšší', async () => {
@@ -93,5 +104,90 @@ describe('ReportService (měsíční obrat po kategoriích)', () => {
         DomainValidationError
       );
     }
+  });
+
+  describe('getLowStockAlerts (co hoří)', () => {
+    const stockDetail = (
+      warehouseId: number,
+      warehouseCode: string,
+      physicalQuantity: number
+    ) => ({
+      warehouseId,
+      warehouseCode,
+      warehouseName: warehouseId === 1 ? 'Centrální sklad Hradec Králové' : 'Sezónní garáž Třebechovice',
+      physicalQuantity,
+      reservedQuantity: 0,
+      availableQuantity: physicalQuantity
+    });
+
+    const overviewItem = (
+      productId: number,
+      productCode: string,
+      physical: number,
+      minStockLimit: number
+    ): ProductStockOverviewDto => ({
+      productId,
+      productCode,
+      productName: `Produkt ${productCode}`,
+      minStockLimit,
+      stocks: [stockDetail(1, 'WH-HK', physical)],
+      totalPhysicalQuantity: physical,
+      totalReservedQuantity: 0,
+      totalAvailableQuantity: physical,
+      isLowStock: physical <= minStockLimit
+    });
+
+    it('měl by vrátit jen produkty na minimu nebo pod ním, kritické první', async () => {
+      stockService.overview = [
+        overviewItem(1, 'WARN-01', 8, 10),
+        overviewItem(2, 'OK-01', 50, 10),
+        overviewItem(3, 'CRIT-01', 0, 10)
+      ];
+
+      const alerts = await service.getLowStockAlerts();
+
+      expect(alerts).toHaveLength(2);
+      expect(alerts[0].productCode).toBe('CRIT-01');
+      expect(alerts[0].severity).toBe('CRITICAL');
+      expect(alerts[1].productCode).toBe('WARN-01');
+      expect(alerts[1].severity).toBe('WARNING');
+    });
+
+    it('měl by spočítat doporučené množství k doplnění minima', async () => {
+      stockService.overview = [
+        overviewItem(1, 'LOW-01', 3, 10),
+        overviewItem(2, 'ZERO-01', 0, 10),
+        overviewItem(3, 'EDGE-01', 10, 10)
+      ];
+
+      const alerts = await service.getLowStockAlerts();
+      const byCode = Object.fromEntries(alerts.map((a) => [a.productCode, a]));
+
+      expect(byCode['LOW-01'].recommendedQuantity).toBe(7);
+      expect(byCode['ZERO-01'].recommendedQuantity).toBe(10);
+      // na přesném minimu se doporučuje alespoň 1 kus
+      expect(byCode['EDGE-01'].recommendedQuantity).toBe(1);
+      expect(byCode['EDGE-01'].severity).toBe('WARNING');
+    });
+
+    it('měl by předat rozpad zásob po skladech', async () => {
+      stockService.overview = [
+        {
+          ...overviewItem(1, 'CRIT-01', 0, 5),
+          stocks: [stockDetail(1, 'WH-HK', 0), stockDetail(2, 'WH-TRB', 0)]
+        }
+      ];
+
+      const alerts = await service.getLowStockAlerts();
+
+      expect(alerts[0].stocks).toHaveLength(2);
+      expect(alerts[0].stocks.map((s) => s.warehouseCode)).toEqual(['WH-HK', 'WH-TRB']);
+    });
+
+    it('měl by vrátit prázdný seznam, když je vše nad minimem', async () => {
+      stockService.overview = [overviewItem(1, 'OK-01', 50, 10)];
+
+      await expect(service.getLowStockAlerts()).resolves.toEqual([]);
+    });
   });
 });
