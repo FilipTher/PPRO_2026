@@ -633,6 +633,39 @@ input, textarea, select {
   color: var(--accent-primary);
 }
 
+/* Inventura */
+.inventory-input {
+  width: 110px;
+}
+
+.diff {
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.diff-positive {
+  color: var(--success);
+}
+
+.diff-negative {
+  color: var(--danger);
+}
+
+.diff-zero {
+  color: var(--text-muted);
+}
+
+.inventory-footer {
+  margin-top: 1.5rem;
+  align-items: flex-end;
+}
+
+.inventory-reason {
+  flex: 1;
+  margin-bottom: 0;
+  min-width: 260px;
+}
+
 /* States */
 .loading-state, .empty-state {
   text-align: center;

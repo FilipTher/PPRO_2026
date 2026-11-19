@@ -42,3 +42,11 @@ export interface TransferStockDto {
   quantity: number;
   note?: string;
 }
+
+export interface InventoryAdjustmentDto {
+  productId: number;
+  warehouseId: number;
+  actualPhysicalQuantity: number;
+  reason: string;
+  note?: string;
+}

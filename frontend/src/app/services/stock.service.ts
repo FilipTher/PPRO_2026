@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
+  InventoryAdjustmentDto,
   ProductStockOverview,
   ReceiveStockDto,
   TransferStockDto,
@@ -30,5 +31,9 @@ export class StockService {
 
   transferStock(dto: TransferStockDto): Observable<ApiResponse<unknown>> {
     return this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/transfer`, dto);
+  }
+
+  reconcileInventory(dto: InventoryAdjustmentDto): Observable<ApiResponse<unknown>> {
+    return this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/inventory`, dto);
   }
 }
