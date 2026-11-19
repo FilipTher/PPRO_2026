@@ -1,0 +1,120 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-19T21:00:00.000Z",
+  "title": "Design System: Dřevěnka – skladový systém",
+  "extensions": {
+    "colorMeta": {
+      "paper": { "role": "neutral", "displayName": "Rýsovací papír", "canonical": "#f1ede2" },
+      "sheet": { "role": "neutral", "displayName": "List", "canonical": "#fbf8ef" },
+      "ink": { "role": "primary", "displayName": "Grafit", "canonical": "#20221d" },
+      "red": { "role": "primary", "displayName": "Poplachová tužka", "canonical": "#a6331f" },
+      "muted": { "role": "neutral", "displayName": "Měkký grafit", "canonical": "#64665b" },
+      "rule": { "role": "neutral", "displayName": "Linka", "canonical": "#d6cebc" },
+      "rule-strong": { "role": "neutral", "displayName": "Silná linka", "canonical": "#b3a88f" },
+      "green": { "role": "secondary", "displayName": "Stavová zelená", "canonical": "#2f6b45" },
+      "amber": { "role": "secondary", "displayName": "Stavová jantarová", "canonical": "#7d530f" },
+      "blue": { "role": "secondary", "displayName": "Výdejová modrá", "canonical": "#2b4f7a" },
+      "violet": { "role": "secondary", "displayName": "Inventurní fialová", "canonical": "#5b3f7a" }
+    },
+    "typographyMeta": {
+      "body": { "displayName": "Pracovní text", "purpose": "Běžný text a popisy." },
+      "title": { "displayName": "Titulek listu", "purpose": "Nadpis stránky." },
+      "label": { "displayName": "Popisek výkresu", "purpose": "Hlavičky tabulek, formulářové popisky, razítka." },
+      "data": { "displayName": "Kóta", "purpose": "Čísla, ceny, počty, kódy." }
+    },
+    "shadows": [
+      {
+        "name": "modal-sheet",
+        "value": "0 24px 60px rgba(24, 24, 18, 0.22)",
+        "purpose": "Jediná hloubka v systému: dialog nad papírovou stránkou."
+      }
+    ],
+    "motion": [
+      { "name": "state-shift", "value": "120ms ease-out", "purpose": "Hover a focus změny." },
+      { "name": "sheet-in", "value": "180ms ease-out", "purpose": "Otevření dialogu a rozbalení menu." }
+    ],
+    "breakpoints": [
+      { "name": "rail-collapse", "value": "1100px" },
+      { "name": "table-cards", "value": "1024px" },
+      { "name": "filters-stack", "value": "900px" },
+      { "name": "phone", "value": "760px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Hlavní akce stránky (Přidat, Rezervovat, Naskladnit).",
+      "html": "<button class=\"ds-btn-primary\">Přidat novou hračku</button>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:34px; padding:8px 14px; background:var(--ink,#20221d); color:var(--sheet,#fbf8ef); border:1px solid var(--ink,#20221d); border-radius:2px; font:600 13px/1.2 system-ui,'Segoe UI',Roboto,sans-serif; white-space:nowrap; cursor:pointer; transition:background 120ms ease-out; } .ds-btn-primary:hover { background:#34362f; } .ds-btn-primary:focus-visible { outline:2px solid var(--ink,#20221d); outline-offset:2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Sekundární akce a obnovení dat.",
+      "html": "<button class=\"ds-btn-ghost\">Obnovit</button>",
+      "css": ".ds-btn-ghost { display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:34px; padding:8px 14px; background:transparent; color:var(--ink-2,#4b4d44); border:1px solid var(--rule,#d6cebc); border-radius:2px; font:600 13px/1.2 system-ui,'Segoe UI',Roboto,sans-serif; cursor:pointer; transition:background 120ms ease-out; } .ds-btn-ghost:hover { background:var(--sheet,#fbf8ef); border-color:var(--rule-strong,#b3a88f); color:var(--ink,#20221d); } .ds-btn-ghost:focus-visible { outline:2px solid var(--ink,#20221d); outline-offset:2px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Hledání a formulářová pole.",
+      "html": "<input class=\"ds-input\" placeholder=\"Hledat podle kódu (např. KACA)…\" />",
+      "css": ".ds-input { width:100%; min-height:34px; padding:6px 8px; background:var(--sheet,#fbf8ef); color:var(--ink,#20221d); border:1px solid var(--rule,#d6cebc); border-radius:2px; font:400 13px/1.3 system-ui,'Segoe UI',Roboto,sans-serif; } .ds-input::placeholder { color:var(--muted,#64665b); opacity:1; } .ds-input:hover { border-color:var(--rule-strong,#b3a88f); } .ds-input:focus { outline:none; border-color:var(--ink,#20221d); box-shadow:0 0 0 2px rgba(32,34,29,0.12); }"
+    },
+    {
+      "name": "Navigation Item",
+      "kind": "nav",
+      "refersTo": "nav-active",
+      "description": "Řádek levého rejstříku; aktivní nese červený čtverec.",
+      "html": "<a class=\"ds-nav-item ds-nav-item--active\" href=\"#\">Dashboard</a>",
+      "css": ".ds-nav-item { display:flex; align-items:center; gap:9px; min-height:34px; padding:6px 9px; color:var(--ink-2,#4b4d44); border:1px solid transparent; text-decoration:none; font:500 13px/1.2 system-ui,'Segoe UI',Roboto,sans-serif; } .ds-nav-item:hover { background:var(--sheet,#fbf8ef); color:var(--ink,#20221d); } .ds-nav-item--active { background:var(--sheet,#fbf8ef); border-color:var(--rule,#d6cebc); color:var(--ink,#20221d); font-weight:700; } .ds-nav-item--active::after { content:''; width:6px; height:6px; margin-left:auto; background:var(--red,#a6331f); } .ds-nav-item:focus-visible { outline:2px solid var(--ink,#20221d); outline-offset:2px; }"
+    },
+    {
+      "name": "Status Stamp",
+      "kind": "chip",
+      "refersTo": "status-stamp",
+      "description": "Razítko stavu objednávky nebo pohybu.",
+      "html": "<span class=\"ds-stamp\">K expedici</span>",
+      "css": ".ds-stamp { display:inline-flex; align-items:center; gap:4px; padding:2px 7px; border:1px solid var(--rule,#d6cebc); border-radius:2px; background:var(--sheet-2,#f4efe2); color:var(--ink-2,#4b4d44); font:600 10px/1.4 ui-monospace,'SFMono-Regular',Consolas,monospace; letter-spacing:0.06em; text-transform:uppercase; white-space:nowrap; }"
+    },
+    {
+      "name": "Data Table",
+      "kind": "card",
+      "refersTo": "status-stamp",
+      "description": "Pracovní tabulka s linkami, mono čísly a šrafovaným řádkem pod minimem.",
+      "html": "<table class=\"ds-table\"><thead><tr><th>Produkt</th><th>Hradec</th><th>Stav</th></tr></thead><tbody><tr><td>KACA-MODRA</td><td>2 ks</td><td>Pod minimem</td></tr></tbody></table>",
+      "css": ".ds-table { width:100%; border-collapse:collapse; background:var(--sheet,#fbf8ef); border:1px solid var(--rule,#d6cebc); font:400 12.5px/1.4 system-ui,'Segoe UI',Roboto,sans-serif; color:var(--ink,#20221d); } .ds-table th { padding:8px 11px; background:var(--sheet-2,#f4efe2); border-bottom:1px solid var(--rule-strong,#b3a88f); font:600 9.5px/1.4 ui-monospace,'SFMono-Regular',Consolas,monospace; letter-spacing:0.08em; text-transform:uppercase; color:var(--muted,#64665b); text-align:left; } .ds-table td { padding:9px 11px; border-bottom:1px solid var(--rule,#d6cebc); } .ds-table tr:hover td { background:#f7f2e5; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Dílenský výkres",
+    "overview": "Sklad je vedený jako technický výkres: rýsovací papír, grafitové linky, kóty a rohový popisový blok. Čísla mají svůj sloupec, stavy mají razítko a jediná červená tužka patří tomu, co hoří. Rozhraní je husté, ale klidné – informace nese mřížka, ne dekorace.",
+    "keyCharacteristics": [
+      "Světlý papír a grafitový inkoust, žádné gradienty, glass ani záře.",
+      "Dvě velikosti zaoblení: 0 a 2 px.",
+      "Mono písmo pro čísla, kódy a razítka.",
+      "Šrafování 45° jako nositel stavu.",
+      "Červená jen pro poplach a destruktivní akce."
+    ],
+    "rules": [
+      { "name": "The One Red Rule", "body": "Červená se objeví jen tam, kde je problém nebo nevratná akce; pokud červená zdobí, je to chyba.", "section": "colors" },
+      { "name": "The Figures Rule", "body": "Každé číslo, které se sčítá, je mono s tabulkovými figurami a zarovnané doprava.", "section": "typography" }
+    ],
+    "dos": [
+      "Do držet všechny plochy ploché a oddělené 1px linkou.",
+      "Do používat mono a tabulkové figury pro každé číslo.",
+      "Do označovat závažnost šrafováním a razítkem.",
+      "Do nechat červenou pouze pro poplach a nevratné akce."
+    ],
+    "donts": [
+      "Don't používat gradienty, glass, záře ani barevné stíny.",
+      "Don't zaoblovat karty a panely nad 2 px.",
+      "Don't míchat poplachovou červenou s běžnými daty.",
+      "Don't nahrazovat husté tabulky hero kartami."
+    ]
+  }
+}

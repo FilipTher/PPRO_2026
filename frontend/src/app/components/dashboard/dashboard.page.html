@@ -71,7 +71,12 @@
     </p>
 
     <div class="alert-list" *ngIf="lowStock.length > 0">
-      <div class="alert-row" *ngFor="let alert of lowStock">
+      <div
+        class="alert-row"
+        *ngFor="let alert of lowStock"
+        [class.critical]="alert.severity === 'CRITICAL'"
+        [class.warning]="alert.severity !== 'CRITICAL'"
+      >
         <div>
           <span class="product-code">{{ alert.productCode }}</span>
           <div class="stock-name">{{ alert.productName }}</div>

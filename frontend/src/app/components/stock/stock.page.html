@@ -38,16 +38,16 @@
       <thead>
         <tr>
           <th>Produkt</th>
-          <th *ngFor="let wh of overview[0].stocks" [title]="wh.warehouseName">
+          <th class="num" *ngFor="let wh of overview[0].stocks" [title]="wh.warehouseName">
             {{ wh.warehouseCode === 'WH-HK' ? 'Hradec Králové' : 'Garáž Třebechovice' }}
           </th>
-          <th>Celkem</th>
+          <th class="num">Celkem</th>
           <th>Stav</th>
           <th>Akce</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let row of overview">
+        <tr *ngFor="let row of overview" [class.low-stock]="row.isLowStock">
           <td data-label="">
             <span class="product-code">{{ row.productCode }}</span>
             <div class="stock-name">{{ row.productName }}</div>
