@@ -6,6 +6,7 @@ import {
   OrderStatus,
   OrderWithRelations
 } from '../types/order.types';
+import { IStockRepository, PrismaStockRepository } from './stock.repository';
 
 const orderInclude = {
   customer: true,
@@ -21,10 +22,18 @@ export interface IOrderRepository {
   findAllOrders(filters?: OrderFilterDto): Promise<OrderWithRelations[]>;
   updateOrderStatus(id: number, status: OrderStatus, shippedAt?: Date): Promise<OrderWithRelations>;
   updateOrderItems(id: number, items: CreateOrderItemDto[]): Promise<OrderWithRelations>;
+
+  /**
+   * Spustí operaci nad objednávkami i zásobami v jedné DB transakci
+   * (rezervace a vznik objednávky musejí být all-or-nothing).
+   */
+  executeInTransaction<T>(
+    operation: (orderRepo: IOrderRepository, stockRepo: IStockRepository) => Promise<T>
+  ): Promise<T>;
 }
 
 export class PrismaOrderRepository implements IOrderRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaClient | Prisma.TransactionClient) {}
 
   async createOrderWithItems(data: CreateOrderWithItemsDto): Promise<OrderWithRelations> {
     // Vnořené create je atomické: objednávka i položky vzniknou, nebo nic
@@ -100,25 +109,47 @@ export class PrismaOrderRepository implements IOrderRepository {
 
   async updateOrderItems(id: number, items: CreateOrderItemDto[]): Promise<OrderWithRelations> {
     // Nahrazení položek musí být atomické, aby objednávka nikdy nezůstala bez nich
-    return this.prisma.$transaction(async (tx) => {
-      await tx.orderItem.deleteMany({ where: { orderId: id } });
+    if ('$transaction' in this.prisma) {
+      return (this.prisma as PrismaClient).$transaction(async (tx) =>
+        this.replaceItems(tx, id, items)
+      );
+    }
+    return this.replaceItems(this.prisma, id, items);
+  }
 
-      if (items.length > 0) {
-        await tx.orderItem.createMany({
-          data: items.map((item) => ({
-            orderId: id,
-            productId: item.productId,
-            warehouseId: item.warehouseId,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice
-          }))
-        });
-      }
+  private async replaceItems(
+    prisma: PrismaClient | Prisma.TransactionClient,
+    id: number,
+    items: CreateOrderItemDto[]
+  ): Promise<OrderWithRelations> {
+    await prisma.orderItem.deleteMany({ where: { orderId: id } });
 
-      return tx.order.findUniqueOrThrow({
-        where: { id },
-        include: orderInclude
+    if (items.length > 0) {
+      await prisma.orderItem.createMany({
+        data: items.map((item) => ({
+          orderId: id,
+          productId: item.productId,
+          warehouseId: item.warehouseId,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice
+        }))
       });
+    }
+
+    return prisma.order.findUniqueOrThrow({
+      where: { id },
+      include: orderInclude
     });
+  }
+
+  async executeInTransaction<T>(
+    operation: (orderRepo: IOrderRepository, stockRepo: IStockRepository) => Promise<T>
+  ): Promise<T> {
+    if ('$transaction' in this.prisma) {
+      return (this.prisma as PrismaClient).$transaction(async (tx) => {
+        return operation(new PrismaOrderRepository(tx), new PrismaStockRepository(tx));
+      });
+    }
+    return operation(this, new PrismaStockRepository(this.prisma));
   }
 }

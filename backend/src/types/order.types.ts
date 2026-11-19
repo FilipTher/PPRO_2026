@@ -30,6 +30,18 @@ export interface CreateOrderWithItemsDto {
   items: CreateOrderItemDto[];
 }
 
+/** Položka objednávky tak, jak ji zadává klient – cenu dopočítá server z ceníku. */
+export interface CreateOrderItemInputDto {
+  productId: number;
+  warehouseId: number;
+  quantity: number;
+}
+
+export interface CreateOrderDto {
+  customer: CreateCustomerDto;
+  items: CreateOrderItemInputDto[];
+}
+
 export interface OrderFilterDto {
   status?: OrderStatus;
   customerId?: number;
