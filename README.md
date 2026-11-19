@@ -142,6 +142,8 @@ Co se při startu stane automaticky:
 Reset do čistého stavu (smaže i data): `docker compose down -v` a znovu `docker compose up --build`.
 Hostitelské porty lze změnit v [docker-compose.yml](file:///D:/Škola/PPRO/PPRO_2026/docker-compose.yml) (`3100:3000`, `4200:80`).
 
+> Docker nikdy nepoužíval? Podrobný postup od instalace, vysvětlení image/kontejner/volume a řešení častých problémů je v [docs/DOCKER.md](file:///D:/Škola/PPRO/PPRO_2026/docs/DOCKER.md).
+
 ### 2. Spuštění lokálně během vývoje:
 
 **Spuštění backendu:**
