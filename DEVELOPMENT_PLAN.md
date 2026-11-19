@@ -4,9 +4,9 @@
 Tento dokument slouží jako **kompletní vývojová mapa a zásobník mikrozadání** pro inkrementální vývoj skladového systému. Projekt striktně dodržuje třívrstvou architekturu, relační databázi s migracemi, automatizované testování a jednopříkazové spuštění přes Docker Compose.
 
 > **AKTUÁLNÍ STAV VÝVOJE (Kde jsme skončili)**:
-> - **Poslední dokončený krok**: **Krok 2.2 – OrderService: rezervace a odmítnutí při nedostatku** `[DOKONČENO]`
-> - **Příští krok na řadě**: **Krok 2.3: Expedice objednávky (`SHIPPED`) a Storno (`CANCELLED`)**
-> - **Celkem automatizovaných testů**: **78 testů** (100% průchodnost)
+> - **Poslední dokončený krok**: **Krok 2.3 – Expedice (`SHIPPED`) a Storno (`CANCELLED`)** `[DOKONČENO]`
+> - **Příští krok na řadě**: **Krok 2.4: Objednávka ze dvou skladů a Editace před expedicí (ADR-003, ADR-007)**
+> - **Celkem automatizovaných testů**: **87 testů** (100% průchodnost)
 
 ---
 

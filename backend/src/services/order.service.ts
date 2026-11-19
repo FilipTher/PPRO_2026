@@ -6,6 +6,7 @@ import {
   CreateOrderDto,
   CreateOrderItemDto,
   CreateCustomerDto,
+  OrderStatus,
   OrderWithRelations
 } from '../types/order.types';
 import { DomainValidationError, NotFoundError } from '../errors';
@@ -109,6 +110,108 @@ export class OrderService {
         items: preparedItems
       });
     });
+  }
+
+  /**
+   * Expedice objednávky: fyzický odpis ze skladu, uvolnění rezervace
+   * a auditní pohyb DISPATCH pro každou položku. Pouze z stavu RESERVED.
+   */
+  async shipOrder(orderId: number): Promise<OrderWithRelations> {
+    const order = await this.orderRepository.findOrderById(orderId);
+    if (!order) {
+      throw new NotFoundError(`Objednávka s ID ${orderId} nebyla nalezena.`);
+    }
+    if (order.status !== 'RESERVED') {
+      throw new DomainValidationError('Expedicovat lze pouze objednávku ve stavu RESERVED.');
+    }
+
+    return this.orderRepository.executeInTransaction(async (orders, stocks) => {
+      // Stav se ověřuje znovu uvnitř transakce (mohl mezitím vzniknout jiný požadavek)
+      const current = await orders.findOrderById(orderId);
+      if (!current) {
+        throw new NotFoundError(`Objednávka s ID ${orderId} nebyla nalezena.`);
+      }
+      if (current.status !== 'RESERVED') {
+        throw new DomainValidationError('Expedicovat lze pouze objednávku ve stavu RESERVED.');
+      }
+
+      for (const item of current.items) {
+        const stock = await stocks.findStock(item.warehouseId, item.productId);
+        const physical = stock ? stock.physicalQuantity : 0;
+        const reserved = stock ? stock.reservedQuantity : 0;
+
+        if (reserved < item.quantity || physical < item.quantity) {
+          throw new DomainValidationError(
+            `Nelze expedovat: na skladě chybí rezervované kusy produktu '${item.product.name}'.`
+          );
+        }
+
+        const updated = await stocks.updateStockQuantities(item.warehouseId, item.productId, {
+          physicalQuantity: physical - item.quantity,
+          reservedQuantity: reserved - item.quantity
+        });
+
+        await stocks.recordMovement({
+          productId: item.productId,
+          warehouseId: item.warehouseId,
+          orderId: current.id,
+          movementType: 'DISPATCH',
+          quantityChange: -item.quantity,
+          quantityAfter: updated.physicalQuantity,
+          reason: `Expedice objednávky ${current.orderNumber}`
+        });
+      }
+
+      return orders.updateOrderStatus(orderId, 'SHIPPED', new Date());
+    });
+  }
+
+  /**
+   * Storno objednávky: uvolnění rezervací bez fyzického odpisu.
+   * Expedovanou objednávku stornovat nelze (řeší se vratkou/reklamací).
+   */
+  async cancelOrder(orderId: number, reason: string): Promise<OrderWithRelations> {
+    if (!reason || reason.trim().length === 0) {
+      throw new DomainValidationError('Důvod storna je povinný.');
+    }
+
+    const order = await this.orderRepository.findOrderById(orderId);
+    if (!order) {
+      throw new NotFoundError(`Objednávka s ID ${orderId} nebyla nalezena.`);
+    }
+    this.assertCancellable(order.status);
+
+    // shortcut: důvod storna se zatím neukládá – Order nemá pole pro poznámku,
+    // doplnit až s modulem vratek/reklamací.
+    return this.orderRepository.executeInTransaction(async (orders, stocks) => {
+      const current = await orders.findOrderById(orderId);
+      if (!current) {
+        throw new NotFoundError(`Objednávka s ID ${orderId} nebyla nalezena.`);
+      }
+      this.assertCancellable(current.status);
+
+      if (current.status === 'RESERVED') {
+        for (const item of current.items) {
+          const stock = await stocks.findStock(item.warehouseId, item.productId);
+          const reserved = stock ? stock.reservedQuantity : 0;
+
+          await stocks.updateStockQuantities(item.warehouseId, item.productId, {
+            reservedQuantity: Math.max(0, reserved - item.quantity)
+          });
+        }
+      }
+
+      return orders.updateOrderStatus(orderId, 'CANCELLED');
+    });
+  }
+
+  private assertCancellable(status: string): void {
+    if (status === 'SHIPPED') {
+      throw new DomainValidationError('Expedovanou objednávku nelze stornovat (řeší se vratkou/reklamací).');
+    }
+    if (status === 'CANCELLED') {
+      throw new DomainValidationError('Objednávka je již stornována.');
+    }
   }
 
   /**

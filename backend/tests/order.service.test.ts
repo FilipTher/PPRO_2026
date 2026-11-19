@@ -86,6 +86,8 @@ class MockCustomerRepository implements ICustomerRepository {
 class MockStockRepository implements IStockRepository {
   warehouses: Warehouse[] = [];
   stocks: WarehouseStock[] = [];
+  movements: StockMovement[] = [];
+  private nextMovementId = 1;
 
   async findAllWarehouses(): Promise<Warehouse[]> {
     return this.warehouses;
@@ -144,7 +146,20 @@ class MockStockRepository implements IStockRepository {
   }
 
   async recordMovement(data: RecordMovementDto): Promise<StockMovement> {
-    throw new Error('Nepoužito v testu');
+    const movement: StockMovement = {
+      id: this.nextMovementId++,
+      productId: data.productId,
+      warehouseId: data.warehouseId,
+      orderId: data.orderId ?? null,
+      movementType: data.movementType,
+      quantityChange: data.quantityChange,
+      quantityAfter: data.quantityAfter,
+      reason: data.reason ?? null,
+      note: data.note ?? null,
+      createdAt: new Date()
+    };
+    this.movements.push(movement);
+    return movement;
   }
 
   async findMovements(): Promise<MovementWithRelations[]> {
@@ -204,9 +219,12 @@ class MockOrderRepository implements IOrderRepository {
     return this.orders;
   }
 
-  async updateOrderStatus(id: number, status: OrderStatus): Promise<OrderWithRelations> {
+  async updateOrderStatus(id: number, status: OrderStatus, shippedAt?: Date): Promise<OrderWithRelations> {
     const order = this.orders.find((o) => o.id === id)!;
     order.status = status;
+    if (shippedAt !== undefined) {
+      order.shippedAt = shippedAt;
+    }
     return order;
   }
 
@@ -224,10 +242,12 @@ class MockOrderRepository implements IOrderRepository {
     operation: (orderRepo: IOrderRepository, stockRepo: IStockRepository) => Promise<T>
   ): Promise<T> {
     const snapshot = JSON.parse(JSON.stringify(this.stockRepo.stocks)) as WarehouseStock[];
+    const movementsSnapshot = this.stockRepo.movements.length;
     try {
       return await operation(this, this.stockRepo);
     } catch (err) {
       this.stockRepo.stocks = snapshot;
+      this.stockRepo.movements.length = movementsSnapshot;
       throw err;
     }
   }
@@ -446,5 +466,96 @@ describe('OrderService (rezervace a fixace cen)', () => {
     await expect(
       createOrder([{ productId: 20, warehouseId: 1, quantity: 1 }])
     ).rejects.toThrow('Nelze objednat neaktivní produkt');
+  });
+
+  describe('shipOrder (expedice)', () => {
+    it('měl by odepsat fyzické zásoby, uvolnit rezervaci a zapsat pohyb DISPATCH', async () => {
+      const order = await createOrder([{ productId: 10, warehouseId: 1, quantity: 3 }]);
+
+      const shipped = await service.shipOrder(order.id);
+
+      expect(shipped.status).toBe('SHIPPED');
+      expect(shipped.shippedAt).toBeInstanceOf(Date);
+
+      const stock = stockRepo.stocks.find((s) => s.productId === 10)!;
+      expect(stock.physicalQuantity).toBe(7);
+      expect(stock.reservedQuantity).toBe(0);
+
+      expect(stockRepo.movements).toHaveLength(1);
+      const movement = stockRepo.movements[0];
+      expect(movement.movementType).toBe('DISPATCH');
+      expect(movement.quantityChange).toBe(-3);
+      expect(movement.quantityAfter).toBe(7);
+      expect(movement.orderId).toBe(order.id);
+      expect(movement.reason).toContain(order.orderNumber);
+    });
+
+    it('měl by odmítnout expedici objednávky, která není RESERVED', async () => {
+      const order = await createOrder([{ productId: 10, warehouseId: 1, quantity: 1 }]);
+      await service.shipOrder(order.id);
+
+      await expect(service.shipOrder(order.id)).rejects.toThrow(DomainValidationError);
+    });
+
+    it('měl by odmítnout neexistující objednávku', async () => {
+      await expect(service.shipOrder(9999)).rejects.toThrow(NotFoundError);
+    });
+
+    it('měl by při chybějící rezervaci nic neodepsat ani nezapsat pohyb', async () => {
+      const order = await createOrder([{ productId: 10, warehouseId: 1, quantity: 2 }]);
+      stockRepo.stocks[0].reservedQuantity = 0; // simulace nekonzistence
+
+      await expect(service.shipOrder(order.id)).rejects.toThrow('chybí rezervované kusy');
+
+      expect(stockRepo.stocks[0].physicalQuantity).toBe(10);
+      expect(stockRepo.movements).toHaveLength(0);
+      expect((await orderRepo.findOrderById(order.id))!.status).toBe('RESERVED');
+    });
+  });
+
+  describe('cancelOrder (storno)', () => {
+    it('měl by uvolnit rezervaci a nastavit stav CANCELLED bez fyzického odpisu', async () => {
+      const order = await createOrder([{ productId: 10, warehouseId: 1, quantity: 3 }]);
+
+      const cancelled = await service.cancelOrder(order.id, 'Zákazník nezaplatil');
+
+      expect(cancelled.status).toBe('CANCELLED');
+
+      const stock = stockRepo.stocks.find((s) => s.productId === 10)!;
+      expect(stock.reservedQuantity).toBe(0);
+      expect(stock.physicalQuantity).toBe(10);
+      // Storno nic fyzicky nepohybuje, auditní kniha zůstává čistá
+      expect(stockRepo.movements).toHaveLength(0);
+    });
+
+    it('měl by odmítnout storno expedované objednávky', async () => {
+      const order = await createOrder([{ productId: 10, warehouseId: 1, quantity: 1 }]);
+      await service.shipOrder(order.id);
+
+      await expect(service.cancelOrder(order.id, 'Pozdní storno')).rejects.toThrow(
+        'Expedovanou objednávku nelze stornovat'
+      );
+    });
+
+    it('měl by odmítnout opakované storno', async () => {
+      const order = await createOrder([{ productId: 10, warehouseId: 1, quantity: 1 }]);
+      await service.cancelOrder(order.id, 'První storno');
+
+      await expect(service.cancelOrder(order.id, 'Druhé storno')).rejects.toThrow(
+        'Objednávka je již stornována.'
+      );
+    });
+
+    it('měl by vyžadovat důvod storna', async () => {
+      const order = await createOrder([{ productId: 10, warehouseId: 1, quantity: 1 }]);
+
+      await expect(service.cancelOrder(order.id, '   ')).rejects.toThrow(
+        'Důvod storna je povinný.'
+      );
+    });
+
+    it('měl by odmítnout neexistující objednávku', async () => {
+      await expect(service.cancelOrder(9999, 'Test')).rejects.toThrow(NotFoundError);
+    });
   });
 });
