@@ -87,7 +87,10 @@ describe('Stock API (zásoby, pohyby a skladové operace ze SQLite)', () => {
       expect(hk.physicalQuantity).toBe(15);
       expect(trebechovice.physicalQuantity).toBe(5);
       expect(item!.totalPhysicalQuantity).toBe(20);
-      expect(item!.totalAvailableQuantity).toBe(20);
+      // Seed drží rezervaci 2 ks pro objednávku k expedici – disponibilní stav se dopočítá
+      expect(item!.totalAvailableQuantity).toBe(
+        item!.totalPhysicalQuantity - item!.totalReservedQuantity
+      );
       // minimum je 10 ks, celkem 20 ks -> není pod minimem
       expect(item!.isLowStock).toBe(false);
     });

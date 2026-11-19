@@ -13,8 +13,8 @@ let productId: number;
 let customerId: number;
 let warehouseId: number;
 
-const from = new Date(Date.UTC(2026, 10, 1)); // 1. 11. 2026
-const to = new Date(Date.UTC(2026, 11, 1)); // 1. 12. 2026
+const from = new Date(Date.UTC(2026, 2, 1)); // 1. 3. 2026
+const to = new Date(Date.UTC(2026, 3, 1)); // 1. 4. 2026
 
 describe('Report repository (obrat jen z expedovaných objednávek)', () => {
   beforeAll(async () => {
@@ -57,26 +57,26 @@ describe('Report repository (obrat jen z expedovaných objednávek)', () => {
     const warehouse = await prisma.warehouse.findFirstOrThrow({ orderBy: { id: 'asc' } });
     warehouseId = warehouse.id;
 
-    // Expedováno v listopadu -> počítá se (2 ks x 199 = 398)
+    // Expedováno v březnu -> počítá se (2 ks x 199 = 398)
     await prisma.order.create({
       data: {
         orderNumber: `ORD-REPORT-IN-${stamp}`,
         customerId,
         status: 'SHIPPED',
-        shippedAt: new Date(Date.UTC(2026, 10, 15, 10, 0, 0)),
+        shippedAt: new Date(Date.UTC(2026, 2, 15, 10, 0, 0)),
         items: {
           create: [{ productId, warehouseId, quantity: 2, unitPrice: 199 }]
         }
       }
     });
 
-    // Expedováno v říjnu -> mimo rozsah
+    // Expedováno v únoru -> mimo rozsah
     await prisma.order.create({
       data: {
         orderNumber: `ORD-REPORT-OUT-${stamp}`,
         customerId,
         status: 'SHIPPED',
-        shippedAt: new Date(Date.UTC(2026, 9, 20, 10, 0, 0)),
+        shippedAt: new Date(Date.UTC(2026, 1, 20, 10, 0, 0)),
         items: {
           create: [{ productId, warehouseId, quantity: 5, unitPrice: 199 }]
         }
