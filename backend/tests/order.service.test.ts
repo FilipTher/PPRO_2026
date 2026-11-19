@@ -230,7 +230,16 @@ class MockOrderRepository implements IOrderRepository {
 
   async updateOrderItems(id: number, items: CreateOrderItemDto[]): Promise<OrderWithRelations> {
     const order = this.orders.find((o) => o.id === id)!;
-    order.items = items.map((item, index) => ({ ...item, id: index + 1, orderId: id })) as never;
+    order.items = items.map((item, index) => ({
+      id: index + 1,
+      orderId: id,
+      productId: item.productId,
+      warehouseId: item.warehouseId,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      product: this.productRepo.products.find((p) => p.id === item.productId)!,
+      warehouse: this.stockRepo.warehouses.find((w) => w.id === item.warehouseId)!
+    })) as never;
     return order;
   }
 
@@ -556,6 +565,168 @@ describe('OrderService (rezervace a fixace cen)', () => {
 
     it('měl by odmítnout neexistující objednávku', async () => {
       await expect(service.cancelOrder(9999, 'Test')).rejects.toThrow(NotFoundError);
+    });
+  });
+
+  describe('objednávka ze dvou skladů (ADR-003)', () => {
+    beforeEach(() => {
+      stockRepo.stocks.push({
+        id: 3,
+        warehouseId: 2,
+        productId: 10,
+        physicalQuantity: 5,
+        reservedQuantity: 0
+      });
+    });
+
+    it('měl by rezervovat položky na různých skladech v jedné objednávce', async () => {
+      const order = await createOrder([
+        { productId: 10, warehouseId: 1, quantity: 2 },
+        { productId: 10, warehouseId: 2, quantity: 3 }
+      ]);
+
+      expect(order.items).toHaveLength(2);
+      expect(stockRepo.stocks.find((s) => s.warehouseId === 1)!.reservedQuantity).toBe(2);
+      expect(stockRepo.stocks.find((s) => s.warehouseId === 2)!.reservedQuantity).toBe(3);
+    });
+
+    it('měl by expedicí odepsat z obou skladů a zapsat dva pohyby DISPATCH', async () => {
+      const order = await createOrder([
+        { productId: 10, warehouseId: 1, quantity: 2 },
+        { productId: 10, warehouseId: 2, quantity: 3 }
+      ]);
+
+      await service.shipOrder(order.id);
+
+      expect(stockRepo.stocks.find((s) => s.warehouseId === 1)!.physicalQuantity).toBe(8);
+      expect(stockRepo.stocks.find((s) => s.warehouseId === 2)!.physicalQuantity).toBe(2);
+
+      const dispatches = stockRepo.movements.filter((m) => m.movementType === 'DISPATCH');
+      expect(dispatches).toHaveLength(2);
+      expect(dispatches.map((m) => m.warehouseId).sort()).toEqual([1, 2]);
+    });
+  });
+
+  describe('updateOrderItems (editace před expedicí, ADR-007)', () => {
+    beforeEach(() => {
+      stockRepo.stocks.push({
+        id: 3,
+        warehouseId: 2,
+        productId: 10,
+        physicalQuantity: 5,
+        reservedQuantity: 0
+      });
+    });
+
+    it('měl by přesunout položku na jiný sklad s přepočtem rezervací', async () => {
+      const order = await createOrder([{ productId: 10, warehouseId: 1, quantity: 3 }]);
+
+      const updated = await service.updateOrderItems(order.id, [
+        { productId: 10, warehouseId: 2, quantity: 2 }
+      ]);
+
+      expect(updated.items).toHaveLength(1);
+      expect(updated.items[0].warehouseId).toBe(2);
+      expect(updated.items[0].quantity).toBe(2);
+
+      expect(stockRepo.stocks.find((s) => s.warehouseId === 1)!.reservedQuantity).toBe(0);
+      expect(stockRepo.stocks.find((s) => s.warehouseId === 2)!.reservedQuantity).toBe(2);
+    });
+
+    it('měl by umožnit editaci, která znovu použije právě uvolněnou rezervaci', async () => {
+      // Objednávka blokuje celou zásobu; stejné množství musí jít potvrdit znovu
+      const order = await createOrder([{ productId: 10, warehouseId: 1, quantity: 10 }]);
+
+      const updated = await service.updateOrderItems(order.id, [
+        { productId: 10, warehouseId: 1, quantity: 10 }
+      ]);
+
+      expect(updated.items[0].quantity).toBe(10);
+      expect(stockRepo.stocks.find((s) => s.warehouseId === 1)!.reservedQuantity).toBe(10);
+    });
+
+    it('měl by odmítnout navýšení nad disponibilní stav a zachovat původní rezervaci', async () => {
+      const order = await createOrder([{ productId: 10, warehouseId: 1, quantity: 2 }]);
+
+      await expect(
+        service.updateOrderItems(order.id, [{ productId: 10, warehouseId: 1, quantity: 12 }])
+      ).rejects.toThrow('Nedostatek zásob');
+
+      expect(stockRepo.stocks.find((s) => s.warehouseId === 1)!.reservedQuantity).toBe(2);
+      const stored = await orderRepo.findOrderById(order.id);
+      expect(stored!.items[0].quantity).toBe(2);
+    });
+
+    it('měl by sečíst duplicitní položky v nové verzi objednávky', async () => {
+      const order = await createOrder([{ productId: 10, warehouseId: 1, quantity: 1 }]);
+
+      await expect(
+        service.updateOrderItems(order.id, [
+          { productId: 10, warehouseId: 1, quantity: 6 },
+          { productId: 10, warehouseId: 1, quantity: 6 }
+        ])
+      ).rejects.toThrow('Nedostatek zásob');
+
+      const updated = await service.updateOrderItems(order.id, [
+        { productId: 10, warehouseId: 1, quantity: 5 },
+        { productId: 10, warehouseId: 1, quantity: 5 }
+      ]);
+
+      expect(updated.items).toHaveLength(1);
+      expect(updated.items[0].quantity).toBe(10);
+      expect(stockRepo.stocks.find((s) => s.warehouseId === 1)!.reservedQuantity).toBe(10);
+    });
+
+    it('měl by odmítnout editaci expedované nebo stornované objednávky', async () => {
+      const shippedOrder = await createOrder([{ productId: 10, warehouseId: 1, quantity: 1 }]);
+      await service.shipOrder(shippedOrder.id);
+      await expect(
+        service.updateOrderItems(shippedOrder.id, [{ productId: 10, warehouseId: 1, quantity: 1 }])
+      ).rejects.toThrow('Expedovanou objednávku nelze editovat.');
+
+      const cancelledOrder = await createOrder([{ productId: 10, warehouseId: 1, quantity: 1 }]);
+      await service.cancelOrder(cancelledOrder.id, 'Test');
+      await expect(
+        service.updateOrderItems(cancelledOrder.id, [{ productId: 10, warehouseId: 1, quantity: 1 }])
+      ).rejects.toThrow('Stornovanou objednávku nelze editovat.');
+    });
+
+    it('měl by odmítnout prázdné položky, neexistující produkt nebo sklad', async () => {
+      const order = await createOrder([{ productId: 10, warehouseId: 1, quantity: 1 }]);
+
+      await expect(service.updateOrderItems(order.id, [])).rejects.toThrow('alespoň jednu položku');
+      await expect(
+        service.updateOrderItems(order.id, [{ productId: 999, warehouseId: 1, quantity: 1 }])
+      ).rejects.toThrow(NotFoundError);
+      await expect(
+        service.updateOrderItems(order.id, [{ productId: 10, warehouseId: 999, quantity: 1 }])
+      ).rejects.toThrow(NotFoundError);
+    });
+
+    it('měl by odmítnout vyřazený produkt při editaci', async () => {
+      const order = await createOrder([{ productId: 10, warehouseId: 1, quantity: 1 }]);
+      stockRepo.stocks.push({
+        id: 4,
+        warehouseId: 1,
+        productId: 20,
+        physicalQuantity: 50,
+        reservedQuantity: 0
+      });
+
+      await expect(
+        service.updateOrderItems(order.id, [{ productId: 20, warehouseId: 1, quantity: 1 }])
+      ).rejects.toThrow('Nelze objednat neaktivní produkt');
+    });
+
+    it('měl by při editaci zafixovat aktuální cenu z ceníku', async () => {
+      const order = await createOrder([{ productId: 10, warehouseId: 1, quantity: 1 }]);
+      productRepo.products[0].sellingPrice = 150;
+
+      const updated = await service.updateOrderItems(order.id, [
+        { productId: 10, warehouseId: 1, quantity: 1 }
+      ]);
+
+      expect(updated.items[0].unitPrice).toBe(150);
     });
   });
 });

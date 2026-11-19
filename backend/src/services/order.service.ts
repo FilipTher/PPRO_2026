@@ -5,8 +5,8 @@ import { IStockRepository } from '../repositories/stock.repository';
 import {
   CreateOrderDto,
   CreateOrderItemDto,
+  CreateOrderItemInputDto,
   CreateCustomerDto,
-  OrderStatus,
   OrderWithRelations
 } from '../types/order.types';
 import { DomainValidationError, NotFoundError } from '../errors';
@@ -23,85 +23,26 @@ export class OrderService {
 
   /**
    * Založí objednávku s okamžitou rezervací zásob.
+   * Položky mohou být z různých skladů (každá má vlastní warehouseId).
    * Vynucuje: neprázdné položky, kladná celá množství, existující aktivní produkty,
    * dostatek VOLNÝCH zásob (fyzický - rezervovaný) na daném skladu.
    * Zajišťuje: rezervaci v jedné transakci, stav RESERVED a zafixování ceny z ceníku.
    */
   async createOrder(dto: CreateOrderDto): Promise<OrderWithRelations> {
-    // 1. Validace vstupu
     this.validateCustomer(dto.customer);
 
-    if (!dto.items || dto.items.length === 0) {
-      throw new DomainValidationError('Objednávka musí obsahovat alespoň jednu položku.');
-    }
+    const preparedItems = await this.prepareItems(dto.items);
 
-    for (const item of dto.items) {
-      if (!Number.isInteger(item.productId) || item.productId <= 0) {
-        throw new DomainValidationError('ID produktu musí být kladné celé číslo.');
-      }
-      if (!Number.isInteger(item.warehouseId) || item.warehouseId <= 0) {
-        throw new DomainValidationError('ID skladu musí být kladné celé číslo.');
-      }
-      if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
-        throw new DomainValidationError('Množství položky musí být kladné celé číslo.');
-      }
-    }
-
-    // 2. Sloučení duplicitních dvojic produkt + sklad, aby se tatáž zásoba
-    //    neověřovala dvakrát (jinak by šlo rezervovat víc, než je k dispozici)
-    const aggregated = new Map<string, { productId: number; warehouseId: number; quantity: number }>();
-    for (const item of dto.items) {
-      const key = `${item.productId}_${item.warehouseId}`;
-      const existing = aggregated.get(key);
-      if (existing) {
-        existing.quantity += item.quantity;
-      } else {
-        aggregated.set(key, {
-          productId: item.productId,
-          warehouseId: item.warehouseId,
-          quantity: item.quantity
-        });
-      }
-    }
-
-    // 3. Existence a aktivita produktů + fixace ceny z aktuálního ceníku
-    const preparedItems: PreparedItem[] = [];
-    for (const item of aggregated.values()) {
-      const product = await this.productRepository.findById(item.productId);
-      if (!product) {
-        throw new NotFoundError(`Produkt s ID ${item.productId} nebyl nalezen.`);
-      }
-      if (!product.isActive) {
-        throw new DomainValidationError(`Nelze objednat neaktivní produkt '${product.name}'.`);
-      }
-
-      preparedItems.push({
-        productId: item.productId,
-        warehouseId: item.warehouseId,
-        quantity: item.quantity,
-        unitPrice: product.sellingPrice,
-        productName: product.name
-      });
-    }
-
-    // 4. Rychlé odmítnutí dřív, než vznikne zákazník nebo objednávka
+    // Rychlé odmítnutí dřív, než vznikne zákazník nebo objednávka
     await this.assertAvailable(this.stockRepository, preparedItems);
 
     const customer = await this.customerRepository.findOrCreate(dto.customer);
 
-    // 5. Atomicky: rezervace všech položek + založení objednávky
+    // Atomicky: rezervace všech položek + založení objednávky
     return this.orderRepository.executeInTransaction(async (orders, stocks) => {
       // Kontrola znovu uvnitř transakce (mezi ověřením a zápisem mohl vzniknout jiný požadavek)
       await this.assertAvailable(stocks, preparedItems);
-
-      for (const item of preparedItems) {
-        const stock = await stocks.findStock(item.warehouseId, item.productId);
-        const currentReserved = stock ? stock.reservedQuantity : 0;
-
-        await stocks.updateStockQuantities(item.warehouseId, item.productId, {
-          reservedQuantity: currentReserved + item.quantity
-        });
-      }
+      await this.reserveItems(stocks, preparedItems);
 
       return orders.createOrderWithItems({
         orderNumber: generateOrderNumber(),
@@ -205,12 +146,140 @@ export class OrderService {
     });
   }
 
+  /**
+   * Editace položek před expedicí (ADR-007).
+   * Atomický přepočet: staré rezervace se uvolní, ověří se disponibilita
+   * pro nové položky a založí se nové rezervace. Cena se fixuje z aktuálního ceníku.
+   */
+  async updateOrderItems(
+    orderId: number,
+    items: CreateOrderItemInputDto[]
+  ): Promise<OrderWithRelations> {
+    const order = await this.orderRepository.findOrderById(orderId);
+    if (!order) {
+      throw new NotFoundError(`Objednávka s ID ${orderId} nebyla nalezena.`);
+    }
+    this.assertEditable(order.status);
+
+    const preparedItems = await this.prepareItems(items);
+
+    return this.orderRepository.executeInTransaction(async (orders, stocks) => {
+      const current = await orders.findOrderById(orderId);
+      if (!current) {
+        throw new NotFoundError(`Objednávka s ID ${orderId} nebyla nalezena.`);
+      }
+      this.assertEditable(current.status);
+
+      // 1. Vrátit rezervace původních položek (uvolní i kusy, které nová verze použije znovu)
+      for (const item of current.items) {
+        const stock = await stocks.findStock(item.warehouseId, item.productId);
+        const reserved = stock ? stock.reservedQuantity : 0;
+
+        await stocks.updateStockQuantities(item.warehouseId, item.productId, {
+          reservedQuantity: Math.max(0, reserved - item.quantity)
+        });
+      }
+
+      // 2. Ověřit disponibilitu pro nové položky až po uvolnění starých rezervací
+      await this.assertAvailable(stocks, preparedItems);
+
+      // 3. Založit nové rezervace a nahradit položky objednávky
+      await this.reserveItems(stocks, preparedItems);
+      return orders.updateOrderItems(orderId, preparedItems);
+    });
+  }
+
+  private assertEditable(status: string): void {
+    if (status === 'SHIPPED') {
+      throw new DomainValidationError('Expedovanou objednávku nelze editovat.');
+    }
+    if (status === 'CANCELLED') {
+      throw new DomainValidationError('Stornovanou objednávku nelze editovat.');
+    }
+    if (status !== 'RESERVED') {
+      throw new DomainValidationError('Editovat lze pouze rezervovanou objednávku.');
+    }
+  }
+
   private assertCancellable(status: string): void {
     if (status === 'SHIPPED') {
       throw new DomainValidationError('Expedovanou objednávku nelze stornovat (řeší se vratkou/reklamací).');
     }
     if (status === 'CANCELLED') {
       throw new DomainValidationError('Objednávka je již stornována.');
+    }
+  }
+
+  /**
+   * Validace položek, sloučení duplicit (produkt + sklad) a fixace cen z ceníku.
+   */
+  private async prepareItems(items: CreateOrderItemInputDto[]): Promise<PreparedItem[]> {
+    if (!items || items.length === 0) {
+      throw new DomainValidationError('Objednávka musí obsahovat alespoň jednu položku.');
+    }
+
+    for (const item of items) {
+      if (!Number.isInteger(item.productId) || item.productId <= 0) {
+        throw new DomainValidationError('ID produktu musí být kladné celé číslo.');
+      }
+      if (!Number.isInteger(item.warehouseId) || item.warehouseId <= 0) {
+        throw new DomainValidationError('ID skladu musí být kladné celé číslo.');
+      }
+      if (!Number.isInteger(item.quantity) || item.quantity <= 0) {
+        throw new DomainValidationError('Množství položky musí být kladné celé číslo.');
+      }
+    }
+
+    // Sloučení duplicitních dvojic produkt + sklad, aby se tatáž zásoba
+    // neověřovala dvakrát (jinak by šlo rezervovat víc, než je k dispozici)
+    const aggregated = new Map<string, { productId: number; warehouseId: number; quantity: number }>();
+    for (const item of items) {
+      const key = `${item.productId}_${item.warehouseId}`;
+      const existing = aggregated.get(key);
+      if (existing) {
+        existing.quantity += item.quantity;
+      } else {
+        aggregated.set(key, {
+          productId: item.productId,
+          warehouseId: item.warehouseId,
+          quantity: item.quantity
+        });
+      }
+    }
+
+    const preparedItems: PreparedItem[] = [];
+    for (const item of aggregated.values()) {
+      const product = await this.productRepository.findById(item.productId);
+      if (!product) {
+        throw new NotFoundError(`Produkt s ID ${item.productId} nebyl nalezen.`);
+      }
+      if (!product.isActive) {
+        throw new DomainValidationError(`Nelze objednat neaktivní produkt '${product.name}'.`);
+      }
+
+      preparedItems.push({
+        productId: item.productId,
+        warehouseId: item.warehouseId,
+        quantity: item.quantity,
+        unitPrice: product.sellingPrice,
+        productName: product.name
+      });
+    }
+
+    return preparedItems;
+  }
+
+  /**
+   * Navýší rezervace všech položek na příslušných skladech.
+   */
+  private async reserveItems(stockRepo: IStockRepository, items: PreparedItem[]): Promise<void> {
+    for (const item of items) {
+      const stock = await stockRepo.findStock(item.warehouseId, item.productId);
+      const currentReserved = stock ? stock.reservedQuantity : 0;
+
+      await stockRepo.updateStockQuantities(item.warehouseId, item.productId, {
+        reservedQuantity: currentReserved + item.quantity
+      });
     }
   }
 
