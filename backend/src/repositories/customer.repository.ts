@@ -4,6 +4,7 @@ import { CreateCustomerDto } from '../types/order.types';
 export interface ICustomerRepository {
   findById(id: number): Promise<Customer | null>;
   findByEmail(email: string): Promise<Customer | null>;
+  findAll(): Promise<Customer[]>;
   /** Zákazník se nikdy nemaže – při opakované objednávce se použije existující záznam. */
   findOrCreate(data: CreateCustomerDto): Promise<Customer>;
 }
@@ -17,6 +18,10 @@ export class PrismaCustomerRepository implements ICustomerRepository {
 
   async findByEmail(email: string): Promise<Customer | null> {
     return this.prisma.customer.findUnique({ where: { email: normalizeEmail(email) } });
+  }
+
+  async findAll(): Promise<Customer[]> {
+    return this.prisma.customer.findMany({ orderBy: { name: 'asc' } });
   }
 
   async findOrCreate(data: CreateCustomerDto): Promise<Customer> {

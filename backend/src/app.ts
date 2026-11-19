@@ -5,6 +5,7 @@ import { createCategoryRouter } from './routes/category.routes';
 import { createStockRouter } from './routes/stock.routes';
 import { createOrderRouter } from './routes/order.routes';
 import { createReportRouter } from './routes/report.routes';
+import { createCustomerRouter } from './routes/customer.routes';
 
 export function createApp() {
   const app = express();
@@ -31,6 +32,9 @@ export function createApp() {
 
   // API modul reportů
   app.use('/api/reports', createReportRouter());
+
+  // API modul zákazníků
+  app.use('/api/customers', createCustomerRouter());
 
   return app;
 }

@@ -63,6 +63,10 @@ class MockCustomerRepository implements ICustomerRepository {
     return this.customers.find((c) => c.email === email.trim().toLowerCase()) || null;
   }
 
+  async findAll(): Promise<Customer[]> {
+    return this.customers;
+  }
+
   async findOrCreate(data: CreateCustomerDto): Promise<Customer> {
     const email = data.email.trim().toLowerCase();
     const existing = await this.findByEmail(email);

@@ -3,6 +3,7 @@ import { ProductsPage } from './components/products/products.page';
 import { StockPage } from './components/stock/stock.page';
 import { InventoryPage } from './components/stock/inventory.page';
 import { MovementsPage } from './components/stock/movements.page';
+import { OrdersPage } from './components/orders/orders.page';
 import { ComingSoonPage } from './components/coming-soon/coming-soon.page';
 
 export const routes: Routes = [
@@ -19,14 +20,7 @@ export const routes: Routes = [
   { path: 'zasoby', component: StockPage },
   { path: 'inventura', component: InventoryPage },
   { path: 'pohyby', component: MovementsPage },
-  {
-    path: 'objednavky',
-    component: ComingSoonPage,
-    data: {
-      title: 'Objednávky',
-      note: 'Rezervace, expedice a storno objednávek přinese Krok 4.5.'
-    }
-  },
+  { path: 'objednavky', component: OrdersPage },
   {
     path: 'reporty',
     component: ComingSoonPage,

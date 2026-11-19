@@ -95,6 +95,16 @@ describe('Orders API (životní cyklus objednávky nad SQLite)', () => {
     expect(shipped.body.data.some((o: { id: number }) => o.id === orderId)).toBe(false);
   });
 
+  it('GET /api/customers by měl vrátit zákazníka založeného objednávkou', async () => {
+    const res = await request(app).get('/api/customers');
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(
+      res.body.data.some((c: { email: string }) => c.email === testEmail)
+    ).toBe(true);
+  });
+
   it('GET /api/orders by měl odmítnout neplatný stav (400)', async () => {
     const res = await request(app).get('/api/orders?status=NEEXISTUJE');
     expect(res.status).toBe(400);

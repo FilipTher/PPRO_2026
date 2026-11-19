@@ -1,0 +1,266 @@
+<section class="page-header">
+  <div>
+    <h2 class="page-title">Objednávky</h2>
+    <p class="page-desc">Rezervace ze skladu, kontrola disponibility a expedice s okamžitým odpisem.</p>
+  </div>
+
+  <button class="btn btn-primary" (click)="openCreate()" id="btn-new-order">
+    <span class="btn-icon">+</span> Nová objednávka
+  </button>
+</section>
+
+<div class="toast-alert toast-success" *ngIf="successMessage">
+  <span>✓</span> {{ successMessage }}
+</div>
+
+<div class="toast-alert toast-danger" *ngIf="errorMessage">
+  <span>⚠</span> {{ errorMessage }}
+</div>
+
+<section class="toolbar-card">
+  <div class="filter-actions">
+    <select
+      class="category-select"
+      [ngModel]="statusFilter"
+      (ngModelChange)="statusFilter = $event; loadOrders()"
+      id="order-status-filter"
+      title="Filtr podle stavu"
+    >
+      <option *ngFor="let option of statusOptions" [value]="option.value">{{ option.label }}</option>
+    </select>
+  </div>
+  <button class="btn btn-ghost" (click)="loadOrders()">↻ Obnovit</button>
+</section>
+
+<div class="loading-state" *ngIf="isLoading">
+  <div class="spinner"></div>
+  <p>Načítám objednávky...</p>
+</div>
+
+<div class="empty-state" *ngIf="!isLoading && orders.length === 0">
+  <div class="empty-icon">🧾</div>
+  <h3>Žádné objednávky</h3>
+  <p>Vytvořte první objednávku – zásoby se okamžitě rezervují.</p>
+</div>
+
+<div class="table-card" *ngIf="!isLoading && orders.length > 0">
+  <div class="table-wrap">
+    <table class="stock-table orders-table">
+      <thead>
+        <tr>
+          <th>Číslo</th>
+          <th>Zákazník</th>
+          <th>Vytvořeno</th>
+          <th>Stav</th>
+          <th>Položky</th>
+          <th>Celkem</th>
+          <th>Akce</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let order of orders">
+          <td><span class="product-code">{{ order.orderNumber }}</span></td>
+          <td>
+            <div class="stock-name">{{ order.customer.name }}</div>
+            <div class="stock-sub">{{ order.customer.email }}</div>
+          </td>
+          <td class="movement-date">{{ order.createdAt | date:'dd.MM.yyyy HH:mm' }}</td>
+          <td><span [ngClass]="statusClass(order.status)">{{ statusLabel(order.status) }}</span></td>
+          <td>{{ order.items.length }}</td>
+          <td class="order-total">{{ orderTotal(order) | number:'1.0-2' }} Kč</td>
+          <td>
+            <div class="row-actions">
+              <button class="btn-row" (click)="openDetail(order)">Detail</button>
+              @if (order.status === 'RESERVED') {
+                <button class="btn-row" (click)="ship(order)">Expedovat</button>
+              }
+              @if (order.status === 'RESERVED' || order.status === 'PENDING') {
+                <button class="btn-row danger" (click)="cancel(order)">Stornovat</button>
+              }
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Dialog: nová objednávka -->
+<div class="modal-backdrop" *ngIf="isCreateOpen" (click)="closeCreate()">
+  <div class="modal-dialog modal-wide" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <h3 class="modal-title">Nová objednávka</h3>
+        <p class="modal-subtitle">Zásoby se rezervují okamžitě; expedice je odepíše fyzicky.</p>
+      </div>
+      <button class="btn-close" (click)="closeCreate()">✕</button>
+    </div>
+
+    <div class="modal-error" *ngIf="createError">
+      <span>⚠</span> {{ createError }}
+    </div>
+
+    <form (ngSubmit)="submitCreate()">
+      <div class="form-group">
+        <label>Zákazník</label>
+        <div class="mode-switch">
+          <button
+            type="button"
+            class="btn-toggle"
+            [class.active]="customerMode === 'existing'"
+            (click)="customerMode = 'existing'"
+            [disabled]="customers.length === 0"
+          >
+            Existující zákazník
+          </button>
+          <button
+            type="button"
+            class="btn-toggle"
+            [class.active]="customerMode === 'new'"
+            (click)="customerMode = 'new'"
+          >
+            Nový zákazník
+          </button>
+        </div>
+      </div>
+
+      <div class="form-group" *ngIf="customerMode === 'existing'">
+        <label for="order-customer">Vyberte zákazníka *</label>
+        <select id="order-customer" class="form-control" [(ngModel)]="selectedCustomerId" name="customer">
+          <option *ngFor="let customer of customers" [ngValue]="customer.id">
+            {{ customer.name }} ({{ customer.email }})
+          </option>
+        </select>
+        <small class="form-hint" *ngIf="customers.length === 0">
+          Zatím není žádný zákazník – zadejte nového.
+        </small>
+      </div>
+
+      <div *ngIf="customerMode === 'new'">
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="order-c-name">Jméno *</label>
+            <input id="order-c-name" type="text" class="form-control" [(ngModel)]="newCustomer.name" name="cname" />
+          </div>
+          <div class="form-group flex-1">
+            <label for="order-c-email">E-mail *</label>
+            <input id="order-c-email" type="email" class="form-control" [(ngModel)]="newCustomer.email" name="cemail" />
+          </div>
+          <div class="form-group flex-1">
+            <label for="order-c-phone">Telefon</label>
+            <input id="order-c-phone" type="text" class="form-control" [(ngModel)]="newCustomer.phone" name="cphone" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group flex-1">
+            <label for="order-c-street">Ulice</label>
+            <input id="order-c-street" type="text" class="form-control" [(ngModel)]="newCustomer.street" name="cstreet" />
+          </div>
+          <div class="form-group flex-1">
+            <label for="order-c-city">Město</label>
+            <input id="order-c-city" type="text" class="form-control" [(ngModel)]="newCustomer.city" name="ccity" />
+          </div>
+          <div class="form-group flex-1">
+            <label for="order-c-zip">PSČ</label>
+            <input id="order-c-zip" type="text" class="form-control" [(ngModel)]="newCustomer.zip" name="czip" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Položky objednávky</label>
+        <div class="order-item-row" *ngFor="let row of itemRows; let i = index">
+          <select class="form-control" [(ngModel)]="row.productId" [name]="'product' + i" title="Produkt">
+            <option *ngFor="let product of products" [ngValue]="product.id">
+              {{ product.code }} – {{ product.name }} ({{ product.sellingPrice }} Kč)
+            </option>
+          </select>
+
+          <select class="form-control" [(ngModel)]="row.warehouseId" [name]="'warehouse' + i" title="Sklad">
+            <option *ngFor="let wh of warehouses" [ngValue]="wh.id">{{ wh.name }}</option>
+          </select>
+
+          <input
+            type="number"
+            min="1"
+            step="1"
+            class="form-control order-qty"
+            [(ngModel)]="row.quantity"
+            [name]="'quantity' + i"
+            title="Počet kusů"
+          />
+
+          <button type="button" class="btn-icon-danger" (click)="removeItemRow(i)" title="Odebrat položku">✕</button>
+
+          <div class="order-item-hint" [class.error]="rowError(row)">
+            <span *ngIf="rowError(row); else availableHint">{{ rowError(row) }}</span>
+            <ng-template #availableHint>
+              volných {{ availableAt(row.productId, row.warehouseId) }} ks
+            </ng-template>
+          </div>
+        </div>
+
+        <button type="button" class="btn btn-ghost" (click)="addItemRow()">+ Přidat položku</button>
+      </div>
+
+      <div class="modal-footer order-footer">
+        <div class="order-summary">Celkem: <strong>{{ createTotal() | number:'1.0-2' }} Kč</strong></div>
+        <button type="button" class="btn btn-ghost" (click)="closeCreate()">Zrušit</button>
+        <button type="submit" class="btn btn-primary" [disabled]="isSubmitting || createBlocked()" id="btn-save-order">
+          {{ isSubmitting ? 'Ukládám...' : 'Rezervovat objednávku' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Dialog: detail objednávky -->
+<div class="modal-backdrop" *ngIf="detailOrder" (click)="closeDetail()">
+  <div class="modal-dialog modal-wide" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <h3 class="modal-title">Objednávka {{ detailOrder.orderNumber }}</h3>
+        <p class="modal-subtitle">
+          {{ detailOrder.customer.name }} · {{ detailOrder.customer.email }} ·
+          <span [ngClass]="statusClass(detailOrder.status)">{{ statusLabel(detailOrder.status) }}</span>
+        </p>
+      </div>
+      <button class="btn-close" (click)="closeDetail()">✕</button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="stock-table">
+        <thead>
+          <tr>
+            <th>Produkt</th>
+            <th>Sklad</th>
+            <th>Množství</th>
+            <th>Cena/ks</th>
+            <th>Celkem</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of detailOrder.items">
+            <td>
+              <span class="product-code">{{ item.product.code }}</span>
+              <div class="stock-name">{{ item.product.name }}</div>
+            </td>
+            <td>{{ item.warehouse.name }}</td>
+            <td>{{ item.quantity }} ks</td>
+            <td>{{ item.unitPrice | number:'1.0-2' }} Kč</td>
+            <td>{{ item.unitPrice * item.quantity | number:'1.0-2' }} Kč</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="modal-footer order-footer">
+      <div class="order-summary">Celkem: <strong>{{ orderTotal(detailOrder) | number:'1.0-2' }} Kč</strong></div>
+      @if (detailOrder.status === 'RESERVED') {
+        <button class="btn btn-primary" (click)="ship(detailOrder)">Expedovat</button>
+        <button class="btn btn-ghost" (click)="cancel(detailOrder)">Stornovat</button>
+      }
+      <button class="btn btn-ghost" (click)="closeDetail()">Zavřít</button>
+    </div>
+  </div>
+</div>
