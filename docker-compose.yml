@@ -6,7 +6,7 @@ services:
     container_name: drevenka-backend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3100:3000"
     environment:
       - PORT=3000
       - DATABASE_URL=file:../data/sklad.db

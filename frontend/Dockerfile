@@ -1,5 +1,5 @@
 # Fáze 1: Sestavení Angular aplikace
-FROM node:20-alpine AS build
+FROM node:24-alpine AS build
 
 WORKDIR /app
 

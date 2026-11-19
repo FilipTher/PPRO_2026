@@ -13,7 +13,7 @@ COPY prisma ./prisma/
 RUN npm ci
 
 # Kopírování konfigurace a zdrojových kódů
-COPY tsconfig.json ./
+COPY tsconfig*.json ./
 COPY src ./src/
 
 # Generování Prisma klienta a kompilace TypeScriptu
