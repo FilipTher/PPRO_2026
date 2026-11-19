@@ -1,0 +1,59 @@
+<section class="page-header">
+  <div>
+    <h2 class="page-title">Zásoby po skladech</h2>
+    <p class="page-desc">Fyzický, rezervovaný a disponibilní stav každé hračky v Hradci Králové a v garáži.</p>
+  </div>
+
+  <button class="btn btn-ghost" (click)="load()">↻ Obnovit</button>
+</section>
+
+<div class="toast-alert toast-danger" *ngIf="errorMessage">
+  <span>⚠</span> {{ errorMessage }}
+</div>
+
+<div class="loading-state" *ngIf="isLoading">
+  <div class="spinner"></div>
+  <p>Načítám zásoby ze skladů...</p>
+</div>
+
+<div class="empty-state" *ngIf="!isLoading && overview.length === 0">
+  <div class="empty-icon">📦</div>
+  <h3>Žádné zásoby k zobrazení</h3>
+  <p>Zatím nejsou evidovány žádné aktivní produkty se skladovými kartami.</p>
+</div>
+
+<div class="table-card" *ngIf="!isLoading && overview.length > 0">
+  <div class="table-wrap">
+    <table class="stock-table">
+      <thead>
+        <tr>
+          <th>Produkt</th>
+          <th *ngFor="let wh of overview[0].stocks">{{ wh.warehouseName }}</th>
+          <th>Celkem</th>
+          <th>Stav</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let row of overview">
+          <td>
+            <span class="product-code">{{ row.productCode }}</span>
+            <div class="stock-name">{{ row.productName }}</div>
+          </td>
+          <td *ngFor="let wh of row.stocks">
+            <div class="stock-qty">{{ wh.physicalQuantity }} ks</div>
+            <div class="stock-sub">{{ wh.reservedQuantity }} rez. · {{ wh.availableQuantity }} volných</div>
+          </td>
+          <td>
+            <div class="stock-qty">{{ row.totalAvailableQuantity }} ks</div>
+            <div class="stock-sub">z {{ row.totalPhysicalQuantity }} fyzicky</div>
+          </td>
+          <td>
+            <span class="badge" [class.badge-danger]="row.isLowStock" [class.badge-success]="!row.isLowStock">
+              {{ row.isLowStock ? 'Pod minimem (min. ' + row.minStockLimit + ')' : 'V pořádku' }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

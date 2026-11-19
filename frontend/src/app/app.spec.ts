@@ -1,50 +1,36 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { App } from './app';
-import { ProductService } from './services/product.service';
-import { CategoryService } from './services/category.service';
-import { StockService } from './services/stock.service';
+import { ReportService } from './services/report.service';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [
+        provideRouter([]),
         {
-          provide: ProductService,
+          provide: ReportService,
           useValue: {
-            getProducts: () => of({ success: true, data: [] }),
-            createProduct: () => of({ success: true, data: {} }),
-            deactivateProduct: () => of({ success: true, data: {} })
-          }
-        },
-        {
-          provide: CategoryService,
-          useValue: {
-            getCategories: () => of({ success: true, data: [] })
-          }
-        },
-        {
-          provide: StockService,
-          useValue: {
-            getStockOverview: () => of({ success: true, data: [] })
+            getLowStockAlerts: () => of({ success: true, data: [] })
           }
         }
       ]
-    })
-      .compileComponents();
+    }).compileComponents();
   });
 
-  it('should create the app', () => {
+  it('should create the app shell', () => {
     const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should render title', async () => {
+  it('should render the brand and the router outlet', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Dřevěnka s.r.o.');
+
+    expect(compiled.querySelector('.brand-title')?.textContent).toContain('Dřevěnka s.r.o.');
+    expect(compiled.querySelector('router-outlet')).not.toBeNull();
   });
 });

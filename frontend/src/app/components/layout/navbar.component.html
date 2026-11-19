@@ -1,0 +1,38 @@
+<header class="top-nav">
+  <div class="nav-container">
+    <a class="brand" routerLink="/produkty">
+      <div class="brand-icon">🧸</div>
+      <div>
+        <h1 class="brand-title">Dřevěnka s.r.o.</h1>
+        <p class="brand-subtitle">Skladový systém • Hradec Králové &amp; Třebechovice</p>
+      </div>
+    </a>
+
+    <button
+      class="menu-toggle"
+      type="button"
+      (click)="toggleMenu()"
+      [attr.aria-expanded]="isMenuOpen"
+      aria-controls="main-nav"
+      aria-label="Otevřít navigaci"
+    >
+      {{ isMenuOpen ? '✕' : '☰' }}
+    </button>
+
+    <nav class="nav-links" id="main-nav" [class.open]="isMenuOpen">
+      <a routerLink="/dashboard" routerLinkActive="active">📊 Dashboard</a>
+      <a routerLink="/produkty" routerLinkActive="active">🧸 Produkty</a>
+      <a routerLink="/zasoby" routerLinkActive="active">📦 Zásoby</a>
+      <a routerLink="/pohyby" routerLinkActive="active">🔁 Pohyby</a>
+      <a routerLink="/objednavky" routerLinkActive="active">🧾 Objednávky</a>
+      <a routerLink="/reporty" routerLinkActive="active" class="nav-alert">
+        📈 Reporty
+        @if (lowStockCount > 0) {
+          <span class="alert-badge" [class.critical]="hasCritical" [title]="'Položek pod minimem: ' + lowStockCount">
+            {{ lowStockCount }}
+          </span>
+        }
+      </a>
+    </nav>
+  </div>
+</header>

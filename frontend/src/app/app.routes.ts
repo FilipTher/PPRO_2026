@@ -1,3 +1,43 @@
 import { Routes } from '@angular/router';
+import { ProductsPage } from './components/products/products.page';
+import { StockPage } from './components/stock/stock.page';
+import { ComingSoonPage } from './components/coming-soon/coming-soon.page';
 
-export const routes: Routes = [];
+export const routes: Routes = [
+  { path: '', pathMatch: 'full', redirectTo: 'produkty' },
+  {
+    path: 'dashboard',
+    component: ComingSoonPage,
+    data: {
+      title: 'Dashboard',
+      note: 'Přehled „co hoří“ a měsíční obrat po kategoriích přinese Krok 4.6.'
+    }
+  },
+  { path: 'produkty', component: ProductsPage },
+  { path: 'zasoby', component: StockPage },
+  {
+    path: 'pohyby',
+    component: ComingSoonPage,
+    data: {
+      title: 'Pohyby',
+      note: 'Auditní kniha všech příjem, výdejů, převodů a inventur přinese Krok 4.4.'
+    }
+  },
+  {
+    path: 'objednavky',
+    component: ComingSoonPage,
+    data: {
+      title: 'Objednávky',
+      note: 'Rezervace, expedice a storno objednávek přinese Krok 4.5.'
+    }
+  },
+  {
+    path: 'reporty',
+    component: ComingSoonPage,
+    data: {
+      title: 'Reporty',
+      note: 'Alerty nízkých zásob a obrat po kategoriích přinese Krok 4.6.'
+    }
+  },
+  { path: '**', redirectTo: 'produkty' }
+];
