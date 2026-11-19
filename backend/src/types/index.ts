@@ -25,3 +25,4 @@ export interface ProductFilterDto {
 }
 
 export * from './stock.types';
+export * from './order.types';

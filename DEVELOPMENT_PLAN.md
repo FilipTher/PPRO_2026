@@ -4,9 +4,9 @@
 Tento dokument slouží jako **kompletní vývojová mapa a zásobník mikrozadání** pro inkrementální vývoj skladového systému. Projekt striktně dodržuje třívrstvou architekturu, relační databázi s migracemi, automatizované testování a jednopříkazové spuštění přes Docker Compose.
 
 > **AKTUÁLNÍ STAV VÝVOJE (Kde jsme skončili)**:
-> - **Poslední dokončený krok**: **Krok 1.4 – REST API pro Sklady a Pohyby** `[DOKONČENO]`
-> - **Příští krok na řadě**: **Krok 2.1: Repozitáře a DTO pro Zákazníky a Objednávky**
-> - **Celkem automatizovaných testů**: **60 testů** (100% průchodnost)
+> - **Poslední dokončený krok**: **Krok 2.1 – Repozitáře a DTO pro Zákazníky a Objednávky** `[DOKONČENO]`
+> - **Příští krok na řadě**: **Krok 2.2: Doménová služba `OrderService` – Rezervace a Odmítnutí při nedostatku**
+> - **Celkem automatizovaných testů**: **67 testů** (100% průchodnost)
 
 ---
 
