@@ -4,9 +4,10 @@
 Tento dokument slouží jako **kompletní vývojová mapa a zásobník mikrozadání** pro inkrementální vývoj skladového systému. Projekt striktně dodržuje třívrstvou architekturu, relační databázi s migracemi, automatizované testování a jednopříkazové spuštění přes Docker Compose.
 
 > **AKTUÁLNÍ STAV VÝVOJE (Kde jsme skončili)**:
-> - **Poslední dokončený krok**: **Krok 5.2 – Obohacení seedu pro obhajobu** `[DOKONČENO]`
-> - **Příští krok na řadě**: **Krok 5.3: Aktualizace README a technické dokumentace k obhajobě**
+> - **Stav**: **projekt dokončen** – všech 20 kroků (fáze 0–5) hotovo.
+> - **Poslední dokončený krok**: **Krok 5.3 – README a technická dokumentace k obhajobě** `[DOKONČENO]`
 > - **Celkem automatizovaných testů**: **157 testů** (129 backend + 28 frontend, 100% průchodnost)
+> - **Zbývá ověřit**: `docker compose up --build` na stroji s Dockerem (na vývojovém stroji Docker není).
 
 ---
 
@@ -15,11 +16,11 @@ Tento dokument slouží jako **kompletní vývojová mapa a zásobník mikrozad�
 | Fáze | Název fáze | Zaměření | Stav |
 |---|---|---|---|
 | **Fáze 0** | **Projektový základ & Vertikální řez Produkt** | Schéma DB, Docker, architektura vrstev, entita `Product` (CRUD, validace cen, soft delete, 12 testů, Angular UI). | **HOTOVO** |
-| **Fáze 1** | **Jádro skladových zásob a pohybů (Stock & Movements)** | Disponibilita vs. fyzický stav, zákaz záporných stavů, naskladnění, přesun mezi sklady HK a Třebechovice, inventura a audit log. | **ROZPRACOVÁNO (Kroky 1.1 a 1.2 hotovy)** |
-| **Fáze 2** | **Objednávky a rezervace (Kde se návrh láme)** | Životní cyklus objednávky (`PENDING` -> `RESERVED` -> `SHIPPED` / `CANCELLED`), fixace cen položek, odmítnutí při nedostatku, objednávka ze 2 skladů. | **PŘIPRAVENO** |
-| **Fáze 3** | **Reporting a manažerské alerty** | Alerty zásob pod minimem („co hoří“), měsíční obrat po kategoriích, doporučení k doobjednání. | **PŘIPRAVENO** |
-| **Fáze 4** | **Frontend aplikace (Angular SPA & Mobilní UI)** | Modulární routing, zobrazení skladů, dialog naskladnění a přesunu, modul inventury, expedice objednávek, manažerský dashboard. | **PŘIPRAVENO** |
-| **Fáze 5** | **Dokumentace, Docker & Příprava na obhajobu** | Obohacení seed dat, Docker Compose ověření, aktualizace [README.md](file:///u:/PPRO/README.md), finální testy. | **PŘIPRAVENO** |
+| **Fáze 1** | **Jádro skladových zásob a pohybů (Stock & Movements)** | Disponibilita vs. fyzický stav, zákaz záporných stavů, naskladnění, přesun mezi sklady HK a Třebechovice, inventura a audit log. | **HOTOVO** |
+| **Fáze 2** | **Objednávky a rezervace (Kde se návrh láme)** | Životní cyklus objednávky (`PENDING` -> `RESERVED` -> `SHIPPED` / `CANCELLED`), fixace cen položek, odmítnutí při nedostatku, objednávka ze 2 skladů. | **HOTOVO** |
+| **Fáze 3** | **Reporting a manažerské alerty** | Alerty zásob pod minimem („co hoří“), měsíční obrat po kategoriích, doporučení k doobjednání. | **HOTOVO** |
+| **Fáze 4** | **Frontend aplikace (Angular SPA & Mobilní UI)** | Modulární routing, zobrazení skladů, dialog naskladnění a přesunu, modul inventury, expedice objednávek, manažerský dashboard. | **HOTOVO** |
+| **Fáze 5** | **Dokumentace, Docker & Příprava na obhajobu** | Obohacení seed dat, Docker Compose ověření, aktualizace [README.md](file:///D:/Škola/PPRO/PPRO_2026/README.md), finální testy. | **HOTOVO** |
 
 ---
 
@@ -61,7 +62,7 @@ V této fázi vybudujeme doménovou logiku pro práci se sklady a pohyby. Zde se
 
 ---
 
-### Krok 1.3: Přesun mezi sklady a Modul Inventury (ADR-003, ADR-005)
+### Krok 1.3: Přesun mezi sklady a Modul Inventury (ADR-003, ADR-005) [DOKONČENO]
 - **Cíl**: Realizovat přesun zboží mezi centrálním skladem v HK a sezónní garáží v Třebechovicích a modul inventurního narovnání stavu.
 - **Co se vytvoří / upraví**:
   - `backend/src/services/stock.service.ts`:
@@ -83,7 +84,7 @@ V této fázi vybudujeme doménovou logiku pro práci se sklady a pohyby. Zde se
 
 ---
 
-### Krok 1.4: REST API kontrolery, routy a integrační testy pro Sklady a Pohyby
+### Krok 1.4: REST API kontrolery, routy a integrační testy pro Sklady a Pohyby [DOKONČENO]
 - **Cíl**: Vystavit API rozhraní pro skladové operace a auditní stopu a pokrýt je integračními HTTP testy.
 - **Co se vytvoří / upraví**:
   - `backend/src/controllers/stock.controller.ts`:
@@ -107,7 +108,7 @@ Tato fáze řeší ústřední problém klienta: *"Dvakrát měsíčně se stane
 
 ---
 
-### Krok 2.1: Repozitáře a DTO pro Zákazníky a Objednávky
+### Krok 2.1: Repozitáře a DTO pro Zákazníky a Objednávky [DOKONČENO]
 - **Cíl**: Zadefinovat typové rozhraní pro správu zákazníků a objednávek včetně položek a zafixovaných cen.
 - **Co se vytvoří / upraví**:
   - `backend/src/types/order.types.ts`: DTOs pro vytvoření objednávky, položky objednávky, změnu stavu a filtry.
@@ -126,7 +127,7 @@ Tato fáze řeší ústřední problém klienta: *"Dvakrát měsíčně se stane
 
 ---
 
-### Krok 2.2: Doménová služba `OrderService` – Rezervace a Odmítnutí při nedostatku
+### Krok 2.2: Doménová služba `OrderService` – Rezervace a Odmítnutí při nedostatku [DOKONČENO]
 - **Cíl**: Vytvořit metodu pro založení objednávky s přísnou kontrolou disponibilního stavu a atomickou rezervací.
 - **Co se vytvoří / upraví**:
   - `backend/src/services/order.service.ts`: Metoda `createOrder(dto: CreateOrderDto)`.
@@ -143,7 +144,7 @@ Tato fáze řeší ústřední problém klienta: *"Dvakrát měsíčně se stane
 
 ---
 
-### Krok 2.3: Expedice objednávky (`SHIPPED`) a Storno (`CANCELLED`)
+### Krok 2.3: Expedice objednávky (`SHIPPED`) a Storno (`CANCELLED`) [DOKONČENO]
 - **Cíl**: Implementovat proces fyzického výdeje ze skladu při expedici a uvolnění rezervací při stornu.
 - **Co se vytvoří / upraví**:
   - `backend/src/services/order.service.ts`:
@@ -164,7 +165,7 @@ Tato fáze řeší ústřední problém klienta: *"Dvakrát měsíčně se stane
 
 ---
 
-### Krok 2.4: Objednávka ze dvou skladů a Editace před expedicí (ADR-003, ADR-007)
+### Krok 2.4: Objednávka ze dvou skladů a Editace před expedicí (ADR-003, ADR-007) [DOKONČENO]
 - **Cíl**: Umožnit rozdělení položek objednávky mezi Hradec a Třebechovice a povolit editaci položek do okamžiku expedice s přepočtem rezervací.
 - **Co se vytvoří / upraví**:
   - `backend/src/services/order.service.ts`:
@@ -180,7 +181,7 @@ Tato fáze řeší ústřední problém klienta: *"Dvakrát měsíčně se stane
 
 ---
 
-### Krok 2.5: REST API pro Zákazníky a Objednávky + Integrační testy
+### Krok 2.5: REST API pro Zákazníky a Objednávky + Integrační testy [DOKONČENO]
 - **Cíl**: Vystavit kompletní REST API pro správu objednávek a zákazníků a ověřit HTTP komunikaci.
 - **Co se vytvoří / upraví**:
   - `backend/src/controllers/order.controller.ts`:
@@ -204,7 +205,7 @@ V této fázi naplníme požadavky klienta na přehled o byznysu: *"Minimální 
 
 ---
 
-### Krok 3.1: Doménová služba a API pro Měsíční obrat po kategoriích
+### Krok 3.1: Doménová služba a API pro Měsíční obrat po kategoriích [DOKONČENO]
 - **Cíl**: Implementovat kalkulaci obratu (tržeb a počtu prodaných kusů) agregovanou podle kategorií hraček za zadaný kalendářní měsíc.
 - **Co se vytvoří / upraví**:
   - `backend/src/services/report.service.ts`:
@@ -221,7 +222,7 @@ V této fázi naplníme požadavky klienta na přehled o byznysu: *"Minimální 
 
 ---
 
-### Krok 3.2: Vyhodnocení kritických zásob pod minimem („Co hoří“)
+### Krok 3.2: Vyhodnocení kritických zásob pod minimem („Co hoří“) [DOKONČENO]
 - **Cíl**: Agregovat produkty, jejichž celková fyzická zásoba napříč sklady (nebo na konkrétním skladu) klesla pod limit `Product.minStockLimit`.
 - **Co se vytvoří / upraví**:
   - `backend/src/services/report.service.ts`:
@@ -243,7 +244,7 @@ Klient Petr Doležal: *"Ať to jde používat i z mobilu, já jsem půlku dne ve
 
 ---
 
-### Krok 4.1: Routing, Navigace a Responzivní Shell aplikace
+### Krok 4.1: Routing, Navigace a Responzivní Shell aplikace [DOKONČENO]
 - **Cíl**: Přestavět hlavní komponentu `App` na moderní aplikační shell s postranním panelem / mobilní navigací a nastavit Angular Router.
 - **Co se vytvoří / upraví**:
   - `frontend/src/app/app.routes.ts`: Routy pro Dashboard, Produkty, Skladové zásoby, Pohyby, Objednávky a Reporty.
@@ -255,7 +256,7 @@ Klient Petr Doležal: *"Ať to jde používat i z mobilu, já jsem půlku dne ve
 
 ---
 
-### Krok 4.2: Komponenta Skladových zásob & Operací (HK vs. Garáž)
+### Krok 4.2: Komponenta Skladových zásob & Operací (HK vs. Garáž) [DOKONČENO]
 - **Cíl**: Vytvořit obrazovku skladů s kartami jednotlivých produktů, zobrazením fyzického vs. disponibilního stavu a dialogy pro příjem zboží a přesun.
 - **Co se vytvoří / upraví**:
   - `frontend/src/app/services/stock.service.ts`: Angular HTTP klient pro skladové endpointy.
@@ -270,7 +271,7 @@ Klient Petr Doležal: *"Ať to jde používat i z mobilu, já jsem půlku dne ve
 
 ---
 
-### Krok 4.3: Modul Inventury v UI (Řešení nesouladu v garáži)
+### Krok 4.3: Modul Inventury v UI (Řešení nesouladu v garáži) [DOKONČENO]
 - **Cíl**: Vytvořit specializované rozhraní pro inventuru, kde skladník zadá reálně napočítané kusy a systém přehledně zobrazí rozdíl před potvrzením.
 - **Co se vytvoří / upraví**:
   - `frontend/src/app/components/stock/inventory-reconciliation.component`:
@@ -288,7 +289,7 @@ Klient Petr Doležal: *"Ať to jde používat i z mobilu, já jsem půlku dne ve
 
 ---
 
-### Krok 4.4: Auditní kniha pohybů v UI (Historie každého kusu)
+### Krok 4.4: Auditní kniha pohybů v UI (Historie každého kusu) [DOKONČENO]
 - **Cíl**: Vytvořit auditní log pohybů odpovídající na dotaz klienta: *"Kde je ta káča, co jsem ji měl minulý týden?"*
 - **Co se vytvoří / upraví**:
   - `frontend/src/app/components/stock/stock-movements.component`:
@@ -301,7 +302,7 @@ Klient Petr Doležal: *"Ať to jde používat i z mobilu, já jsem půlku dne ve
 
 ---
 
-### Krok 4.5: Správa objednávek v UI (Tvorba, Rezervace, Expedice & Storno)
+### Krok 4.5: Správa objednávek v UI (Tvorba, Rezervace, Expedice & Storno) [DOKONČENO]
 - **Cíl**: Vytvořit rozhraní pro správu objednávek z e-shopu s jasnou vizualizací stavů a okamžitou kontrolou disponibility při zadávání.
 - **Co se vytvoří / upraví**:
   - `frontend/src/app/services/order.service.ts`: Angular servis pro objednávky.
@@ -317,7 +318,7 @@ Klient Petr Doležal: *"Ať to jde používat i z mobilu, já jsem půlku dne ve
 
 ---
 
-### Krok 4.6: Dashboard („Co hoří“) & Manažerský přehled obratu
+### Krok 4.6: Dashboard („Co hoří“) & Manažerský přehled obratu [DOKONČENO]
 - **Cíl**: Vytvořit úvodní řídicí panel pro majitele firmy s barevným panelem kritických zásob a grafem měsíčního obratu po kategoriích.
 - **Co se vytvoří / upraví**:
   - `frontend/src/app/components/dashboard/dashboard.component`:
@@ -336,7 +337,7 @@ Cílem této závěrečné fáze je zaručit stoprocentní reprodukovatelnost, s
 
 ---
 
-### Krok 5.1: Doladění Docker Compose & Produkční build
+### Krok 5.1: Doladění Docker Compose & Produkční build [DOKONČENO]
 - **Cíl**: Zkontrolovat a optimalizovat kontejnerizaci tak, aby po `docker compose up --build` bez jakéhokoli dalšího zásahu naběhl čistý funkční systém s migracemi a seedem.
 - **Co se vytvoří / upraví**:
   - Kontrola `backend/Dockerfile` a `frontend/Dockerfile`.
@@ -348,7 +349,7 @@ Cílem této závěrečné fáze je zaručit stoprocentní reprodukovatelnost, s
 
 ---
 
-### Krok 5.2: Obohacení syntetických dat (Seed pro obhajobu)
+### Krok 5.2: Obohacení syntetických dat (Seed pro obhajobu) [DOKONČENO]
 - **Cíl**: Rozšířit seedovací data o realistický příběh firmy Dřevěnka s.r.o. pro prezentaci vyučujícímu (včetně rozdílu v garáži a rozpracovaných objednávek).
 - **Co se vytvoří / upraví**:
   - `backend/prisma/seed.ts`:
@@ -363,13 +364,13 @@ Cílem této závěrečné fáze je zaručit stoprocentní reprodukovatelnost, s
 
 ---
 
-### Krok 5.3: Aktualizace [README.md](file:///u:/PPRO/README.md) a Technická dokumentace k obhajobě
-- **Cíl**: Zaznamenat do [README.md](file:///u:/PPRO/README.md) všechna finální rozhodnutí (ADR-003 až ADR-007), popsat architekturu, diagramy toků a argumentaci pro obhajobu.
+### Krok 5.3: Aktualizace [README.md](file:///D:/Škola/PPRO/PPRO_2026/README.md) a Technická dokumentace k obhajobě [DOKONČENO]
+- **Cíl**: Zaznamenat do [README.md](file:///D:/Škola/PPRO/PPRO_2026/README.md) všechna finální rozhodnutí (ADR-003 až ADR-007), popsat architekturu, diagramy toků a argumentaci pro obhajobu.
 - **Co se vytvoří / upraví**:
   - Doplnění schválených rozhodnutí v tabulce ADR.
   - Popis toků rezervace vs. fyzického odpisu (kde se návrh láme).
   - Popis spuštění a testování.
-- **Verifikace**: Dokumentace odpovídá skutečné implementaci a požadavkům v [AGENTS.md](file:///u:/PPRO/AGENTS.md).
+- **Verifikace**: Dokumentace odpovídá skutečné implementaci a požadavkům v [AGENTS.md](file:///D:/Škola/PPRO/PPRO_2026/AGENTS.md).
 - **Prompt pro mikrozadání**:
   > *"Proveď Krok 5.3: Aktualizuj `README.md` – zapiš finální stavy všech architektonických rozhodnutí ADR, doplň diagram toku rezervace a expedice a připrav argumentační podklady k obhajobě."*
 
