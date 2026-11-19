@@ -18,3 +18,27 @@ export interface ProductStockOverview {
   totalAvailableQuantity: number;
   isLowStock: boolean;
 }
+
+export interface Warehouse {
+  id: number;
+  name: string;
+  code: string;
+  address: string;
+  isSeasonal: boolean;
+}
+
+export interface ReceiveStockDto {
+  productId: number;
+  warehouseId: number;
+  quantity: number;
+  reason?: string;
+  note?: string;
+}
+
+export interface TransferStockDto {
+  productId: number;
+  sourceWarehouseId: number;
+  targetWarehouseId: number;
+  quantity: number;
+  note?: string;
+}

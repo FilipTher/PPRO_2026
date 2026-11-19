@@ -7,6 +7,10 @@
   <button class="btn btn-ghost" (click)="load()">↻ Obnovit</button>
 </section>
 
+<div class="toast-alert toast-success" *ngIf="successMessage">
+  <span>✓</span> {{ successMessage }}
+</div>
+
 <div class="toast-alert toast-danger" *ngIf="errorMessage">
   <span>⚠</span> {{ errorMessage }}
 </div>
@@ -31,6 +35,7 @@
           <th *ngFor="let wh of overview[0].stocks">{{ wh.warehouseName }}</th>
           <th>Celkem</th>
           <th>Stav</th>
+          <th>Akce</th>
         </tr>
       </thead>
       <tbody>
@@ -52,8 +57,144 @@
               {{ row.isLowStock ? 'Pod minimem (min. ' + row.minStockLimit + ')' : 'V pořádku' }}
             </span>
           </td>
+          <td>
+            <div class="row-actions">
+              <button class="btn-row" (click)="openReceipt(row)">+ Naskladnit</button>
+              <button class="btn-row" (click)="openTransfer(row)">↔ Přesunout</button>
+            </div>
+          </td>
         </tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<!-- Dialog: příjem na sklad -->
+<div class="modal-backdrop" *ngIf="receiptProduct" (click)="closeReceipt()">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <h3 class="modal-title">Naskladnit: {{ receiptProduct.productName }}</h3>
+        <p class="modal-subtitle">{{ receiptProduct.productCode }} · zásoba se navýší a zapíše se pohyb RECEIPT</p>
+      </div>
+      <button class="btn-close" (click)="closeReceipt()">✕</button>
+    </div>
+
+    <div class="modal-error" *ngIf="receiptError">
+      <span>⚠</span> {{ receiptError }}
+    </div>
+
+    <form (ngSubmit)="submitReceipt()">
+      <div class="form-group">
+        <label for="receipt-warehouse">Sklad *</label>
+        <select id="receipt-warehouse" class="form-control" [(ngModel)]="receiptWarehouseId" name="warehouse">
+          <option *ngFor="let wh of warehouses" [ngValue]="wh.id">{{ wh.name }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="receipt-quantity">Počet kusů *</label>
+        <input
+          id="receipt-quantity"
+          type="number"
+          min="1"
+          step="1"
+          class="form-control"
+          [(ngModel)]="receiptQuantity"
+          name="quantity"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="receipt-note">Poznámka</label>
+        <input
+          id="receipt-note"
+          type="text"
+          class="form-control"
+          placeholder="např. dodávka od truhláře"
+          [(ngModel)]="receiptNote"
+          name="note"
+        />
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" (click)="closeReceipt()">Zrušit</button>
+        <button type="submit" class="btn btn-primary" [disabled]="isReceiptSubmitting">
+          {{ isReceiptSubmitting ? 'Ukládám...' : 'Naskladnit' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Dialog: přesun mezi sklady -->
+<div class="modal-backdrop" *ngIf="transferProduct" (click)="closeTransfer()">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <h3 class="modal-title">Přesunout: {{ transferProduct.productName }}</h3>
+        <p class="modal-subtitle">{{ transferProduct.productCode }} · přesunout lze jen volné kusy</p>
+      </div>
+      <button class="btn-close" (click)="closeTransfer()">✕</button>
+    </div>
+
+    <div class="modal-error" *ngIf="transferError">
+      <span>⚠</span> {{ transferError }}
+    </div>
+
+    <form (ngSubmit)="submitTransfer()">
+      <div class="form-row">
+        <div class="form-group flex-1">
+          <label for="transfer-source">Odkud *</label>
+          <select id="transfer-source" class="form-control" [(ngModel)]="transferSourceId" name="source">
+            <option *ngFor="let wh of warehouses" [ngValue]="wh.id">{{ wh.name }}</option>
+          </select>
+        </div>
+
+        <div class="form-group flex-1">
+          <label for="transfer-target">Kam *</label>
+          <select id="transfer-target" class="form-control" [(ngModel)]="transferTargetWarehouseId" name="target">
+            <option *ngFor="let wh of warehouses" [ngValue]="wh.id">{{ wh.name }}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="transfer-quantity">Počet kusů *</label>
+        <input
+          id="transfer-quantity"
+          type="number"
+          min="1"
+          step="1"
+          class="form-control"
+          [(ngModel)]="transferQuantity"
+          name="quantity"
+          required
+        />
+        <small class="form-hint">
+          Na zdrojovém skladu je volných {{ availableAt(transferProduct, transferSourceId) }} ks.
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="transfer-note">Poznámka</label>
+        <input
+          id="transfer-note"
+          type="text"
+          class="form-control"
+          placeholder="např. sezónní přesun do garáže"
+          [(ngModel)]="transferNote"
+          name="note"
+        />
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" (click)="closeTransfer()">Zrušit</button>
+        <button type="submit" class="btn btn-primary" [disabled]="isTransferSubmitting">
+          {{ isTransferSubmitting ? 'Přesouvám...' : 'Přesunout' }}
+        </button>
+      </div>
+    </form>
   </div>
 </div>
