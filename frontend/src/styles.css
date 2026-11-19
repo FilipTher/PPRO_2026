@@ -1458,3 +1458,63 @@ textarea {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Reporty */
+.report-controls {
+  align-items: center;
+}
+
+.report-month {
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+  min-width: 132px;
+  text-align: center;
+}
+
+.reports-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 0.85rem;
+  align-items: start;
+}
+
+.share-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.share-cell .revenue-bar {
+  width: 90px;
+  height: 6px;
+  display: inline-block;
+  flex: none;
+}
+
+.share-value {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--ink-2);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1100px) {
+  .reports-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1024px) {
+  .table-cards {
+    overflow: visible;
+  }
+
+  .share-cell {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}

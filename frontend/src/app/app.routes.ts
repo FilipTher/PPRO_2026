@@ -5,7 +5,7 @@ import { InventoryPage } from './components/stock/inventory.page';
 import { MovementsPage } from './components/stock/movements.page';
 import { OrdersPage } from './components/orders/orders.page';
 import { DashboardPage } from './components/dashboard/dashboard.page';
-import { ComingSoonPage } from './components/coming-soon/coming-soon.page';
+import { ReportsPage } from './components/reports/reports.page';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'produkty' },
@@ -17,11 +17,7 @@ export const routes: Routes = [
   { path: 'objednavky', component: OrdersPage },
   {
     path: 'reporty',
-    component: ComingSoonPage,
-    data: {
-      title: 'Reporty',
-      note: 'Alerty nízkých zásob a obrat po kategoriích přinese Krok 4.6.'
-    }
+    component: ReportsPage
   },
   { path: '**', redirectTo: 'produkty' }
 ];

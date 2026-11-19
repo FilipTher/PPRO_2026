@@ -1,0 +1,140 @@
+<section class="page-header">
+  <div>
+    <h2 class="page-title">Reporty</h2>
+    <p class="page-desc">Měsíční obrat po kategoriích a seznam položek pod minimem — podklad pro rozhodnutí, co doobjednat.</p>
+  </div>
+
+  <div class="filter-actions report-controls">
+    <button class="btn-row" (click)="previousMonth()" aria-label="Předchozí měsíc" title="Předchozí měsíc">
+      <svg class="icon icon-sm" aria-hidden="true"><use href="#i-prev" /></svg>
+    </button>
+    <span class="report-month">{{ monthLabel }}</span>
+    <button class="btn-row" (click)="nextMonth()" aria-label="Následující měsíc" title="Následující měsíc">
+      <svg class="icon icon-sm" aria-hidden="true"><use href="#i-next" /></svg>
+    </button>
+    <button class="btn btn-ghost" (click)="load()">
+      <svg class="icon icon-sm" aria-hidden="true"><use href="#i-refresh" /></svg> Obnovit
+    </button>
+  </div>
+</section>
+
+<div class="toast-alert toast-danger" *ngIf="errorMessage">
+  <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert" /></svg> {{ errorMessage }}
+</div>
+
+<div class="kpi-strip" *ngIf="!isLoading && report">
+  <div class="kpi">
+    <span class="kpi-label">Tržby za měsíc</span>
+    <span class="kpi-value">{{ report.totalRevenue | number:'1.0-0' }} Kč</span>
+  </div>
+  <div class="kpi">
+    <span class="kpi-label">Prodané kusy</span>
+    <span class="kpi-value">{{ report.totalQuantity }} ks</span>
+  </div>
+  <div class="kpi">
+    <span class="kpi-label">Kategorie s obratem</span>
+    <span class="kpi-value">{{ categoryCount }}</span>
+  </div>
+  <div class="kpi">
+    <span class="kpi-label">Položky pod minimem</span>
+    <span class="kpi-value" [class.danger]="lowStock.length > 0">{{ lowStock.length }}</span>
+  </div>
+</div>
+
+<div class="reports-grid" *ngIf="!isLoading && report">
+  <section class="panel">
+    <div class="panel-header">
+      <h3 class="panel-title">
+        <svg class="icon" aria-hidden="true"><use href="#i-chart" /></svg>
+        Obrat po kategoriích
+      </h3>
+      <span class="badge">{{ report.totalRevenue | number:'1.0-0' }} Kč</span>
+    </div>
+
+    <p class="panel-empty" *ngIf="report.categories.length === 0">
+      Za {{ monthLabel }} nejsou expedované žádné objednávky.
+    </p>
+
+    <div class="table-wrap table-cards" *ngIf="report.categories.length > 0">
+      <table class="stock-table reports-table">
+        <thead>
+          <tr>
+            <th>Kategorie</th>
+            <th class="num">Tržby</th>
+            <th class="num">Kusy</th>
+            <th>Podíl</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let category of report.categories">
+            <td data-label="">{{ category.categoryName }}</td>
+            <td class="num" data-label="Tržby">{{ category.revenue | number:'1.0-0' }} Kč</td>
+            <td class="num" data-label="Kusy">{{ category.quantity }}</td>
+            <td data-label="Podíl">
+              <div class="share-cell">
+                <span class="revenue-bar"><span class="revenue-bar-fill" [style.width]="shareWidth(category)"></span></span>
+                <span class="share-value">{{ category.revenueSharePercent }} %</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel" [class.panel-alert]="lowStock.length > 0">
+    <div class="panel-header">
+      <h3 class="panel-title">
+        <svg class="icon" aria-hidden="true"><use href="#i-fire" /></svg>
+        Co hoří
+      </h3>
+      <span class="badge" *ngIf="lowStock.length > 0">
+        {{ lowStock.length }} {{ lowStock.length === 1 ? 'položka' : lowStock.length < 5 ? 'položky' : 'položek' }}
+      </span>
+      <span class="badge badge-success" *ngIf="lowStock.length === 0">Vše nad minimem</span>
+    </div>
+
+    <p class="panel-empty" *ngIf="lowStock.length === 0">
+      Žádná hračka není na minimu ani pod ním.
+    </p>
+
+    <div class="table-wrap table-cards" *ngIf="lowStock.length > 0">
+      <table class="stock-table">
+        <thead>
+          <tr>
+            <th>Produkt</th>
+            <th class="num">Fyzicky</th>
+            <th class="num">Minimum</th>
+            <th class="num">Doplnit</th>
+            <th>Stav</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let alert of lowStock" [class.low-stock]="alert.severity === 'CRITICAL'">
+            <td data-label="">
+              <span class="product-code">{{ alert.productCode }}</span>
+              <div class="stock-name">{{ alert.productName }}</div>
+            </td>
+            <td class="num" data-label="Fyzicky">{{ alert.totalPhysicalQuantity }} ks</td>
+            <td class="num" data-label="Minimum">{{ alert.minStockLimit }} ks</td>
+            <td class="num" data-label="Doplnit">{{ alert.recommendedQuantity }} ks</td>
+            <td data-label="Stav">
+              <span class="movement-badge" [ngClass]="alert.severity === 'CRITICAL' ? 'critical' : 'warning'">
+                {{ alert.severity === 'CRITICAL' ? 'Kritické' : 'Varování' }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<div class="table-card" *ngIf="isLoading">
+  <div class="skeleton-row" *ngFor="let i of [1, 2, 3, 4]">
+    <div class="skeleton skeleton-line"></div>
+    <div class="skeleton skeleton-line"></div>
+    <div class="skeleton skeleton-line" style="width: 50%"></div>
+    <div class="skeleton skeleton-line" style="width: 60%"></div>
+  </div>
+</div>
