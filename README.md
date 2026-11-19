@@ -105,7 +105,7 @@ Tato sekce zaznamenává klíčová architektonická rozhodnutí a řešení ote
 
 ### Požadavky:
 - Node.js (v20+) a npm
-- Docker & Docker Compose (volitelně pro kontejnerizaci)
+- Docker & Docker Compose (pro spuštění celé aplikace jediným příkazem)
 
 ### 1. Spuštění v Dockeru (jediným příkazem):
 ```bash
@@ -113,6 +113,15 @@ docker compose up --build
 ```
 - Aplikace (Angular UI): `http://localhost:4200`
 - REST API (Backend): `http://localhost:3100/api/products`
+
+Co se při startu stane automaticky:
+- backend kontejner spustí `prisma migrate deploy` (aplikace migrací na prázdnou DB), seed s ukázkovými daty a poté server;
+- backend má healthcheck na `/api/health` a frontend se spustí až po jeho ozdravení (`depends_on: service_healthy`), takže UI nenaběhne dřív než API;
+- SQLite databáze je v pojmenovaném volume `drevenka_sqlite_data` (`/app/data`), takže data přežijí restart kontejneru;
+- Nginx ve frontend kontejneru servíruje Angular SPA a přesměrovává `/api/*` na `backend:3000`.
+
+Reset do čistého stavu (smaže i data): `docker compose down -v` a znovu `docker compose up --build`.
+Hostitelské porty lze změnit v [docker-compose.yml](file:///D:/Škola/PPRO/PPRO_2026/docker-compose.yml) (`3100:3000`, `4200:80`).
 
 ### 2. Spuštění lokálně během vývoje:
 

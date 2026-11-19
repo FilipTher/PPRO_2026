@@ -9,8 +9,8 @@ RUN apk add --no-cache openssl
 COPY package*.json ./
 COPY prisma ./prisma/
 
-# Instalace závislostí
-RUN npm ci
+# Instalace závislostí (build potřebuje i devDependencies: prisma CLI, ts-node, typescript)
+RUN npm ci --include=dev
 
 # Kopírování konfigurace a zdrojových kódů
 COPY tsconfig*.json ./
