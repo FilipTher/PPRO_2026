@@ -20,7 +20,12 @@ export interface IOrderRepository {
   findOrderById(id: number): Promise<OrderWithRelations | null>;
   findOrderByNumber(orderNumber: string): Promise<OrderWithRelations | null>;
   findAllOrders(filters?: OrderFilterDto): Promise<OrderWithRelations[]>;
-  updateOrderStatus(id: number, status: OrderStatus, shippedAt?: Date): Promise<OrderWithRelations>;
+  updateOrderStatus(
+    id: number,
+    status: OrderStatus,
+    shippedAt?: Date,
+    cancelReason?: string
+  ): Promise<OrderWithRelations>;
   updateOrderItems(id: number, items: CreateOrderItemDto[]): Promise<OrderWithRelations>;
 
   /**
@@ -95,13 +100,15 @@ export class PrismaOrderRepository implements IOrderRepository {
   async updateOrderStatus(
     id: number,
     status: OrderStatus,
-    shippedAt?: Date
+    shippedAt?: Date,
+    cancelReason?: string
   ): Promise<OrderWithRelations> {
     return this.prisma.order.update({
       where: { id },
       data: {
         status,
-        ...(shippedAt !== undefined && { shippedAt })
+        ...(shippedAt !== undefined && { shippedAt }),
+        ...(cancelReason !== undefined && { cancelReason })
       },
       include: orderInclude
     });

@@ -1,4 +1,5 @@
-import { PrismaClient, Customer } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { Customer } from '../domain/models';
 import { CreateCustomerDto } from '../types/order.types';
 
 export interface ICustomerRepository {

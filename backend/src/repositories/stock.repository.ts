@@ -1,4 +1,5 @@
-import { PrismaClient, Prisma, Warehouse, WarehouseStock, StockMovement, Product } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { Product, StockMovement, Warehouse, WarehouseStock } from '../domain/models';
 import { RecordMovementDto, StockMovementFilterDto } from '../types/stock.types';
 
 export type StockWithRelations = WarehouseStock & {
@@ -113,15 +114,24 @@ export class PrismaStockRepository implements IStockRepository {
     productId: number,
     data: { physicalQuantity?: number; reservedQuantity?: number }
   ): Promise<WarehouseStock> {
-    return this.prisma.warehouseStock.upsert({
-      where: {
-        warehouseId_productId: { warehouseId, productId }
-      },
-      update: {
-        ...(data.physicalQuantity !== undefined && { physicalQuantity: data.physicalQuantity }),
-        ...(data.reservedQuantity !== undefined && { reservedQuantity: data.reservedQuantity })
-      },
-      create: {
+    // Pozor: upsert by na SQLite provedl INSERT s výchozím fyzickým stavem 0,
+    // což teď (s CHECK reserved <= physical) selže ještě před přepnutím na UPDATE.
+    const existing = await this.prisma.warehouseStock.findUnique({
+      where: { warehouseId_productId: { warehouseId, productId } }
+    });
+
+    if (existing) {
+      return this.prisma.warehouseStock.update({
+        where: { id: existing.id },
+        data: {
+          ...(data.physicalQuantity !== undefined && { physicalQuantity: data.physicalQuantity }),
+          ...(data.reservedQuantity !== undefined && { reservedQuantity: data.reservedQuantity })
+        }
+      });
+    }
+
+    return this.prisma.warehouseStock.create({
+      data: {
         warehouseId,
         productId,
         physicalQuantity: data.physicalQuantity ?? 0,

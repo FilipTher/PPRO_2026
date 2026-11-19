@@ -207,6 +207,8 @@ describe('Orders API (životní cyklus objednávky nad SQLite)', () => {
 
     expect(res.status).toBe(200);
     expect(res.body.data.status).toBe('CANCELLED');
+    // Důvod storna se ukládá kvůli dohledatelnosti
+    expect(res.body.data.cancelReason).toBe('Zákazník nezaplatil');
 
     const overview = (await request(app).get('/api/stock/overview')).body.data as {
       productId: number;

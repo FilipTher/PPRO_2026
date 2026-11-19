@@ -1,4 +1,4 @@
-import { Customer, Order, OrderItem, Product, Warehouse } from '@prisma/client';
+import { Customer, Order, OrderItem, Product, Warehouse } from '../domain/models';
 
 /**
  * Stavy objednávky dle README:

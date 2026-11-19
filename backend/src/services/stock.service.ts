@@ -1,4 +1,4 @@
-import { StockMovement } from '@prisma/client';
+import { StockMovement } from '../domain/models';
 import { IStockRepository, StockWithWarehouse, MovementWithRelations } from '../repositories/stock.repository';
 import { IProductRepository } from '../repositories/product.repository';
 import {
@@ -263,6 +263,13 @@ export class StockService {
       const currentStock = await txRepo.findStock(dto.warehouseId, dto.productId);
       const currentPhysical = currentStock ? currentStock.physicalQuantity : 0;
       const currentReserved = currentStock ? currentStock.reservedQuantity : 0;
+
+      // Rezervace nesmí zůstat nad fyzickým stavem (drží to i CHECK v databázi)
+      if (dto.actualPhysicalQuantity < currentReserved) {
+        throw new DomainValidationError(
+          `Inventurní stav nesmí být nižší než rezervované množství (${currentReserved} ks).`
+        );
+      }
 
       const difference = dto.actualPhysicalQuantity - currentPhysical;
 

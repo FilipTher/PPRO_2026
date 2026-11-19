@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from '@jest/globals';
 import { ProductService, DomainValidationError, NotFoundError, ConflictError } from '../src/services/product.service';
 import { IProductRepository, ProductWithCategories } from '../src/repositories/product.repository';
 import { ICategoryRepository } from '../src/repositories/category.repository';
-import { Product, Category } from '@prisma/client';
+import { Product, Category } from '../src/domain/models';
 import { CreateProductDto, UpdateProductDto, ProductFilterDto } from '../src/types';
 
 // Mockovaná in-memory implementace repozitáře pro čistý unit test domény bez závislosti na DB

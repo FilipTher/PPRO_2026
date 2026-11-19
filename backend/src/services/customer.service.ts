@@ -1,4 +1,4 @@
-import { Customer } from '@prisma/client';
+import { Customer } from '../domain/models';
 import { ICustomerRepository } from '../repositories/customer.repository';
 
 export class CustomerService {

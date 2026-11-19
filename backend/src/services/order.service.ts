@@ -155,7 +155,7 @@ export class OrderService {
         }
       }
 
-      return orders.updateOrderStatus(orderId, 'CANCELLED');
+      return orders.updateOrderStatus(orderId, 'CANCELLED', undefined, reason.trim());
     });
   }
 

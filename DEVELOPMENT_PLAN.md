@@ -6,7 +6,7 @@ Tento dokument slouží jako **kompletní vývojová mapa a zásobník mikrozad�
 > **AKTUÁLNÍ STAV VÝVOJE (Kde jsme skončili)**:
 > - **Stav**: **projekt dokončen** – všech 20 kroků (fáze 0–5) hotovo.
 > - **Poslední dokončený krok**: **Krok 5.3 – README a technická dokumentace k obhajobě** `[DOKONČENO]`
-> - **Celkem automatizovaných testů**: **157 testů** (129 backend + 28 frontend, 100% průchodnost)
+> - **Celkem automatizovaných testů**: **162 testů** (134 backend + 28 frontend, 100% průchodnost)
 > - **Zbývá ověřit**: `docker compose up --build` na stroji s Dockerem (na vývojovém stroji Docker není).
 
 ---

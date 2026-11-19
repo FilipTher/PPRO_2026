@@ -90,6 +90,7 @@ model Order {
   movements   StockMovement[]
   createdAt   DateTime        @default(now())
   shippedAt   DateTime?
+  cancelReason String?
 }
 
 model OrderItem {

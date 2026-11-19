@@ -228,6 +228,12 @@
       <button class="btn-close" (click)="closeDetail()">✕</button>
     </div>
 
+    @if (detailOrder.status === 'CANCELLED' && detailOrder.cancelReason) {
+      <div class="modal-error">
+        <span>ℹ</span> Důvod storna: {{ detailOrder.cancelReason }}
+      </div>
+    }
+
     <div class="table-wrap">
       <table class="stock-table">
         <thead>

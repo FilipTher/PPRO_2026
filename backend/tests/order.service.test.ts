@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from '@jest/globals';
-import { Product, Warehouse, WarehouseStock, StockMovement, Customer } from '@prisma/client';
+import { Product, Warehouse, WarehouseStock, StockMovement, Customer } from '../src/domain/models';
 import { OrderService } from '../src/services/order.service';
 import { IOrderRepository } from '../src/repositories/order.repository';
 import { ICustomerRepository } from '../src/repositories/customer.repository';
@@ -194,6 +194,7 @@ class MockOrderRepository implements IOrderRepository {
       status: data.status ?? 'PENDING',
       createdAt: new Date(),
       shippedAt: null,
+      cancelReason: null,
       customer: (await this.customerRepo.findById(data.customerId))!,
       items: data.items.map((item, index) => ({
         id: index + 1,
@@ -223,11 +224,19 @@ class MockOrderRepository implements IOrderRepository {
     return this.orders;
   }
 
-  async updateOrderStatus(id: number, status: OrderStatus, shippedAt?: Date): Promise<OrderWithRelations> {
+  async updateOrderStatus(
+    id: number,
+    status: OrderStatus,
+    shippedAt?: Date,
+    cancelReason?: string
+  ): Promise<OrderWithRelations> {
     const order = this.orders.find((o) => o.id === id)!;
     order.status = status;
     if (shippedAt !== undefined) {
       order.shippedAt = shippedAt;
+    }
+    if (cancelReason !== undefined) {
+      order.cancelReason = cancelReason;
     }
     return order;
   }
@@ -533,6 +542,7 @@ describe('OrderService (rezervace a fixace cen)', () => {
       const cancelled = await service.cancelOrder(order.id, 'Zákazník nezaplatil');
 
       expect(cancelled.status).toBe('CANCELLED');
+      expect(cancelled.cancelReason).toBe('Zákazník nezaplatil');
 
       const stock = stockRepo.stocks.find((s) => s.productId === 10)!;
       expect(stock.reservedQuantity).toBe(0);

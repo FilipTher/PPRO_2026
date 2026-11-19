@@ -7,7 +7,7 @@ import {
   MovementWithRelations
 } from '../src/repositories/stock.repository';
 import { IProductRepository, ProductWithCategories } from '../src/repositories/product.repository';
-import { Warehouse, WarehouseStock, StockMovement, Product } from '@prisma/client';
+import { Warehouse, WarehouseStock, StockMovement, Product } from '../src/domain/models';
 import {
   ReceiveStockDto,
   RecordMovementDto,
@@ -568,6 +568,18 @@ describe('StockService (Doménová vrstva zásob a pohybů)', () => {
           reason: '   '
         })
       ).rejects.toThrow(DomainValidationError);
+    });
+
+    it('měl by odmítnout stav nižší než rezervované množství (drží invariant zásob)', async () => {
+      // Na skladě je fyzicky 10, rezervované 2 -> stav 1 by nechal rezervaci nad fyzickým stavem
+      await expect(
+        stockService.reconcileInventory({
+          productId: 10,
+          warehouseId: 1,
+          actualPhysicalQuantity: 1,
+          reason: 'Manko'
+        })
+      ).rejects.toThrow('nesmí být nižší než rezervované množství (2 ks)');
     });
 
     it('měl by vyhodit NotFoundError pro neexistující produkt nebo sklad', async () => {

@@ -1,4 +1,5 @@
-import { PrismaClient, Category } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import { Category } from '../domain/models';
 
 export interface ICategoryRepository {
   findAll(): Promise<Category[]>;

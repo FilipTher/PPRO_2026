@@ -1,16 +1,17 @@
-import { PrismaClient, Product, Category } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
+import { Category, Product } from '../domain/models';
 import { CreateProductDto, UpdateProductDto, ProductFilterDto } from '../types';
 
 /** Produkt včetně přiřazených kategorií (vazba M:N ProductCategory) */
 export type ProductWithCategories = Product & { categories: Category[] };
 
-type ProductWithJoin = Product & { categories: { category: Category }[] };
-
 const categoryInclude = {
   categories: {
     include: { category: true }
   }
-};
+} as const;
+
+type ProductWithJoin = Prisma.ProductGetPayload<{ include: typeof categoryInclude }>;
 
 export interface IProductRepository {
   findAll(filters?: ProductFilterDto): Promise<ProductWithCategories[]>;

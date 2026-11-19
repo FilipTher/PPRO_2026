@@ -39,6 +39,7 @@ export interface Order {
   status: OrderStatus;
   createdAt: string;
   shippedAt: string | null;
+  cancelReason: string | null;
   customer: Customer;
   items: OrderItem[];
 }

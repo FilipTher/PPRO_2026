@@ -1,4 +1,4 @@
-import { Category } from '@prisma/client';
+import { Category } from '../domain/models';
 import { ICategoryRepository } from '../repositories/category.repository';
 
 export class CategoryService {

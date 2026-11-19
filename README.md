@@ -82,6 +82,8 @@ frontend/src/app/
   services/      product, category, stock, order, customer, report
   models/        product, stock, order, report
   app.routes.ts  routing celé SPA
+backend/src/domain/
+  models.ts      čisté doménové typy (bez závislosti na Prisma/DB driveru)
 ```
 
 ### Datový model (Navržené entity pro Zadání B):
@@ -108,9 +110,9 @@ Stavy: **Schváleno** = odsouhlaseno na začátku, **Implementováno** = rozhodn
 | ADR-002 | Výběr zadání | Vybráno Zadání B (Sklad pro malý e-shop – Dřevěnka s.r.o.). | Schváleno |
 | ADR-003 | Objednávka ze dvou skladů naráz (Bod 1) | Objednávka může mít položky z různých skladů – `OrderItem.warehouseId` určuje, odkud se expeduje. Expedice odepíše z každého skladu zvlášť a zapíše vlastní `DISPATCH` pohyb. | Implementováno |
 | ADR-004 | Co znamená „dost zásob“ (Bod 2) | Rozlišujeme **fyzický** a **disponibilní** stav (`disponibilní = fyzický − rezervovaný`). Při přijetí objednávky se zásoba okamžitě **rezervuje** (`reservedQuantity +=`), takže se stejný kus neprodá dvakrát. K fyzickému odpisu a pohybu `DISPATCH` dochází až při expedici. | Implementováno |
-| ADR-005 | Záporný stav a inventura (Bod 3) | Záporný fyzický stav nesmí vzniknout: přesun i expedice kontrolují volné kusy a inventura vyžaduje nezáporný stav. SQLite přes Prisma neumí `CHECK` constraint, proto je garance v doménové vrstvě a transakcích (ne jen ve formuláři). Nesoulad v garáži řeší **Inventura**, která zapíše `INVENTORY_ADJUSTMENT` s povinným důvodem. | Implementováno |
+| ADR-005 | Záporný stav a inventura (Bod 3) | Záporný stav garantuje databáze: migrace `20261119120100` přidává `CHECK` na `WarehouseStock` (`physicalQuantity >= 0`, `reservedQuantity >= 0`, `reservedQuantity <= physicalQuantity`). Doména navíc kontroluje volné kusy u přesunu/expedice a u inventury odmítne stav nižší než rezervované množství. Nesoulad v garáži řeší **Inventura**, která zapíše `INVENTORY_ADJUSTMENT` s povinným důvodem (bez rozdílu se nezapisuje). | Implementováno |
 | ADR-006 | Varianty produktu (Bod 4) | Varianty (3 barvy téže káči) jsou samostatné produkty s vlastním kódem a zásobou, propojené volitelnou vazbou `isVariantOfId` na nadřazený produkt. | Implementováno |
-| ADR-007 | Změna objednávky po zaplacení (Bod 5) | Editace položek je povolena jen do expedice (`RESERVED`); expedovanou ani stornovanou objednávku měnit nelze. Editace v jedné transakci uvolní staré rezervace, znovu ověří disponibilitu a založí nové (ADR-003). | Implementováno |
+| ADR-007 | Změna objednávky po zaplacení (Bod 5) | Editace položek je povolena jen do expedice (`RESERVED`); expedovanou ani stornovanou objednávku měnit nelze. Editace v jedné transakci uvolní staré rezervace, znovu ověří disponibilitu a založí nové (ADR-003). Storno ukládá povinný důvod do `Order.cancelReason` kvůli dohledatelnosti. | Implementováno |
 | ADR-008 | Vertikální řez pro demo (Produkt) | První řez byl realizován entitou `Product` (Prisma SQLite → repozitář → doménová služba s validacemi → Express REST API → Angular SPA). Na něj navázaly další vertikální řezy (sklad, objednávky, reporty). | Schváleno |
 | ADR-009 | Change detection ve frontendu (Angular 22 = zoneless) | Angular 22 běží bez `zone.js`, takže asynchronní callbacky (HTTP odpovědi, `setTimeout`) samy nespustí překreslení. Každá komponenta, která v async callbacku mění stav, volá `ChangeDetectorRef.markForCheck()`; jinak UI zůstane viset ve stavu před odpovědí. | Schváleno |
 | ADR-010 | Produkty a kategorie (požadavek 1) | Produkt patří do více kategorií naráz – vazba M:N (`ProductCategory`) je vystavena v API (`GET /api/categories`, `categoryIds` při vytvoření produktu, filtr `GET /api/products?categoryId=`) i v UI (filtr, štítky na kartě, zaškrtávací výběr v dialogu). Kategorie se pouze čtou, zakládají se seedem – klient jejich správu nepožaduje. | Implementováno |
@@ -168,7 +170,7 @@ Frontend se spustí na `http://localhost:4200` a automaticky přesměrovává vo
 ### 3. Spuštění automatizovaných testů:
 ```bash
 cd backend
-npm test        # 129 testů: unit (doménová pravidla) + integrační HTTP nad SQLite
+npm test        # 134 testů: unit (doménová pravidla) + integrační HTTP nad SQLite
 ```
 ```bash
 cd frontend
@@ -272,8 +274,8 @@ Pro čisté demo: `docker compose down -v` a znovu `docker compose up --build` (
 ## 9. Omezení a možná rozšíření
 
 - **Autentizace** není součástí zadání – systém je navržený pro jednu skladovou obsluhu.
-- **Důvod storna** se validuje, ale zatím neukládá (schéma `Order` nemá pole pro poznámku); doplnit s modulem vratek/reklamací.
+- **Rezervace** nejsou samostatné pohyby v auditní knize (pohyby zaznamenávají fyzické změny); dohledatelné jsou přes položky objednávek a stav `RESERVED` (ADR-004).
 - **Fulltext** v auditní knize filtruje načtenou stránku pohybů, ne server; při velkých objemech doplnit serverové hledání a stránkování.
-- **Souběh** je řešen transakcemi a opakovanou kontrolou stavu uvnitř nich; zátěžový test souběžných objednávek nebyl proveden.
+- **Souběh** je řešen transakcemi a opakovanou kontrolou stavu uvnitř nich; test 5 souběžných objednávek na 1 kus prošel bez přeprodeje, zátěžový test ale nebyl proveden.
 - **Kategorie** se zakládají seedem (klient nepožadoval jejich správu v UI).
-- **Docker** je nakonfigurovaný, ale na vývojovém stroji nebyl Docker k dispozici – `docker compose up --build` je potřeba ověřit na stroji s Dockerem.
+- **Docker** je nakonfigurovaný; na vývojovém stroji bez Dockeru nešel ověřit, ale `docker compose up --build` byl spuštěn uživatelem (backend healthy).
