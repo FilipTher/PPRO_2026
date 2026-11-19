@@ -4,9 +4,9 @@
 Tento dokument slouží jako **kompletní vývojová mapa a zásobník mikrozadání** pro inkrementální vývoj skladového systému. Projekt striktně dodržuje třívrstvou architekturu, relační databázi s migracemi, automatizované testování a jednopříkazové spuštění přes Docker Compose.
 
 > **AKTUÁLNÍ STAV VÝVOJE (Kde jsme skončili)**:
-> - **Poslední dokončený krok**: **Krok 1.3 – Přesun mezi sklady a Modul Inventury (ADR-003, ADR-005)** `[DOKONČENO]`
-> - **Příští krok na řadě**: **Krok 1.4: REST API kontrolery, routy a integrační testy pro Sklady a Pohyby**
-> - **Celkem automatizovaných testů**: **46 testů** (100% průchodnost)
+> - **Poslední dokončený krok**: **Krok 1.4 – REST API pro Sklady a Pohyby** `[DOKONČENO]`
+> - **Příští krok na řadě**: **Krok 2.1: Repozitáře a DTO pro Zákazníky a Objednávky**
+> - **Celkem automatizovaných testů**: **60 testů** (100% průchodnost)
 
 ---
 

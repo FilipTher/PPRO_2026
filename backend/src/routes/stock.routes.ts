@@ -14,7 +14,12 @@ export function createStockRouter(): Router {
   const service = new StockService(stockRepository, productRepository);
   const controller = new StockController(service);
 
+  router.get('/warehouses', controller.getWarehouses);
   router.get('/overview', controller.getOverview);
+  router.get('/movements', controller.getMovements);
+  router.post('/receipt', controller.receive);
+  router.post('/transfer', controller.transfer);
+  router.post('/inventory', controller.inventory);
 
   return router;
 }
