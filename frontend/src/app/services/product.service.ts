@@ -10,13 +10,16 @@ export class ProductService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = '/api/products';
 
-  getProducts(search?: string, isActive?: boolean): Observable<ApiResponse<Product[]>> {
+  getProducts(search?: string, isActive?: boolean, categoryId?: number): Observable<ApiResponse<Product[]>> {
     let params = new HttpParams();
     if (search && search.trim()) {
       params = params.set('search', search.trim());
     }
     if (isActive !== undefined) {
       params = params.set('isActive', String(isActive));
+    }
+    if (categoryId !== undefined) {
+      params = params.set('categoryId', String(categoryId));
     }
     return this.http.get<ApiResponse<Product[]>>(this.apiUrl, { params });
   }

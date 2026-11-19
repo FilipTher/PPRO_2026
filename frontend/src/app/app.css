@@ -91,6 +91,12 @@
   color: var(--text-muted);
 }
 
+.badge-danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
 /* Main Content */
 .main-content {
   max-width: 1200px;
@@ -121,6 +127,33 @@
 .page-desc {
   color: var(--text-secondary);
   font-size: 0.95rem;
+}
+
+/* Přepínání pohledů */
+.tab-bar {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.tab {
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 0.7rem 1.1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tab:hover {
+  color: var(--text-primary);
+}
+
+.tab.active {
+  color: var(--accent-primary);
+  border-bottom-color: var(--accent-primary);
 }
 
 /* Buttons */
@@ -245,6 +278,19 @@
   border-color: rgba(234, 154, 62, 0.35);
 }
 
+.category-select {
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+}
+
+.category-select:focus {
+  border-color: var(--border-focus);
+}
+
 /* Product Grid */
 .product-grid {
   display: grid;
@@ -326,6 +372,24 @@
   line-height: 1.35;
 }
 
+/* Kategorie produktu (vazba M:N) */
+.category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.85rem;
+}
+
+.chip {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-full);
+  background: var(--info-bg);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
 .product-desc {
   font-size: 0.88rem;
   color: var(--text-secondary);
@@ -386,6 +450,68 @@
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+/* Zásoby po skladech */
+.table-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+.stock-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.stock-table th,
+.stock-table td {
+  text-align: left;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: top;
+  white-space: nowrap;
+}
+
+.stock-table th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.stock-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.stock-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.stock-name {
+  color: var(--text-primary);
+  font-weight: 600;
+  margin-top: 0.35rem;
+  white-space: normal;
+}
+
+.stock-qty {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stock-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.15rem;
 }
 
 /* States */
@@ -556,6 +682,30 @@
 .form-row {
   display: flex;
   gap: 1rem;
+}
+
+.category-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.25rem;
+}
+
+.form-group .checkbox-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+.form-group .checkbox-item input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-primary);
+  cursor: pointer;
 }
 
 .flex-1 { flex: 1; }

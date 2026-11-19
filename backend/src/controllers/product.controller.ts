@@ -9,7 +9,15 @@ export class ProductController {
       const search = typeof req.query.search === 'string' ? req.query.search : undefined;
       const isActive = req.query.isActive !== undefined ? req.query.isActive === 'true' : undefined;
 
-      const products = await this.productService.getAllProducts({ search, isActive });
+      let categoryId: number | undefined;
+      if (typeof req.query.categoryId === 'string' && req.query.categoryId.length > 0) {
+        categoryId = parseInt(req.query.categoryId, 10);
+        if (isNaN(categoryId)) {
+          return res.status(400).json({ success: false, error: 'Neplatné ID kategorie.' });
+        }
+      }
+
+      const products = await this.productService.getAllProducts({ search, isActive, categoryId });
       res.json({ success: true, data: products });
     } catch (err: any) {
       this.handleError(res, err);
@@ -34,6 +42,10 @@ export class ProductController {
     try {
       const { code, name, description, purchasePrice, sellingPrice, minStockLimit, isVariantOfId } = req.body;
 
+      const categoryIds = Array.isArray(req.body.categoryIds)
+        ? req.body.categoryIds.map((id: unknown) => Number(id))
+        : undefined;
+
       const product = await this.productService.createProduct({
         code,
         name,
@@ -41,7 +53,8 @@ export class ProductController {
         purchasePrice: Number(purchasePrice),
         sellingPrice: Number(sellingPrice),
         minStockLimit: minStockLimit !== undefined ? Number(minStockLimit) : undefined,
-        isVariantOfId: isVariantOfId !== undefined ? Number(isVariantOfId) : undefined
+        isVariantOfId: isVariantOfId !== undefined ? Number(isVariantOfId) : undefined,
+        categoryIds
       });
 
       res.status(201).json({ success: true, data: product });

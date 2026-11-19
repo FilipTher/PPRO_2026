@@ -39,6 +39,18 @@
       </button>
     </section>
 
+    <!-- Přepínání pohledů (routing přijde ve fázi 4) -->
+    <nav class="tab-bar">
+      <button class="tab" [class.active]="activeView === 'products'" (click)="switchView('products')">
+        Katalog produktů
+      </button>
+      <button class="tab" [class.active]="activeView === 'stock'" (click)="switchView('stock')">
+        Zásoby po skladech
+      </button>
+    </nav>
+
+    <ng-container *ngIf="activeView === 'products'">
+
     <!-- Toolbar: Search & Filters -->
     <section class="toolbar-card">
       <div class="search-box">
@@ -54,6 +66,16 @@
       </div>
 
       <div class="filter-actions">
+        <select
+          class="category-select"
+          [ngModel]="selectedCategoryId"
+          (ngModelChange)="onCategoryChange($event)"
+          id="filter-category"
+          title="Filtrovat podle kategorie"
+        >
+          <option [ngValue]="null">Všechny kategorie</option>
+          <option *ngFor="let c of categories" [ngValue]="c.id">{{ c.name }}</option>
+        </select>
         <button 
           class="btn-toggle" 
           [class.active]="showOnlyActive" 
@@ -93,6 +115,11 @@
         </div>
 
         <h3 class="product-name">{{ p.name }}</h3>
+
+        <div class="category-chips" *ngIf="p.categories.length > 0">
+          <span class="chip" *ngFor="let c of p.categories">{{ c.name }}</span>
+        </div>
+
         <p class="product-desc">{{ p.description || 'Bez popisu materiálu a provedení.' }}</p>
 
         <div class="pricing-panel">
@@ -130,6 +157,58 @@
         </div>
       </div>
     </div>
+
+    </ng-container>
+
+    <!-- Zásoby po skladech (požadavek 2) -->
+    <ng-container *ngIf="activeView === 'stock'">
+      <div class="loading-state" *ngIf="isStockLoading">
+        <div class="spinner"></div>
+        <p>Načítám zásoby ze skladů...</p>
+      </div>
+
+      <div class="empty-state" *ngIf="!isStockLoading && stockOverview.length === 0">
+        <div class="empty-icon">📦</div>
+        <h3>Žádné zásoby k zobrazení</h3>
+        <p>Zatím nejsou evidovány žádné aktivní produkty se skladovými kartami.</p>
+      </div>
+
+      <div class="table-card" *ngIf="!isStockLoading && stockOverview.length > 0">
+        <div class="table-wrap">
+          <table class="stock-table">
+            <thead>
+              <tr>
+                <th>Produkt</th>
+                <th *ngFor="let wh of stockOverview[0].stocks">{{ wh.warehouseName }}</th>
+                <th>Celkem</th>
+                <th>Stav</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of stockOverview">
+                <td>
+                  <span class="product-code">{{ row.productCode }}</span>
+                  <div class="stock-name">{{ row.productName }}</div>
+                </td>
+                <td *ngFor="let wh of row.stocks">
+                  <div class="stock-qty">{{ wh.physicalQuantity }} ks</div>
+                  <div class="stock-sub">{{ wh.reservedQuantity }} rez. · {{ wh.availableQuantity }} volných</div>
+                </td>
+                <td>
+                  <div class="stock-qty">{{ row.totalAvailableQuantity }} ks</div>
+                  <div class="stock-sub">z {{ row.totalPhysicalQuantity }} fyzicky</div>
+                </td>
+                <td>
+                  <span class="badge" [class.badge-danger]="row.isLowStock" [class.badge-success]="!row.isLowStock">
+                    {{ row.isLowStock ? 'Pod minimem (min. ' + row.minStockLimit + ')' : 'V pořádku' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </ng-container>
   </main>
 
   <!-- Modal for Creating New Product -->
@@ -187,6 +266,26 @@
             name="description"
             class="form-control"
           ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Kategorie (lze vybrat více naráz)</label>
+          <div class="category-options" *ngIf="categories.length > 0; else noCategories">
+            <label class="checkbox-item" *ngFor="let c of categories">
+              <input
+                type="checkbox"
+                [checked]="newProduct.categoryIds?.includes(c.id)"
+                (change)="toggleCategory(c.id)"
+              />
+              <span>{{ c.name }}</span>
+            </label>
+          </div>
+          <ng-template #noCategories>
+            <small class="form-hint">Zatím nejsou založeny žádné kategorie.</small>
+          </ng-template>
+          <small class="form-hint">
+            Tatáž káča může být současně „pro batolata“ i „dárky do 500 Kč“.
+          </small>
         </div>
 
         <div class="form-row">

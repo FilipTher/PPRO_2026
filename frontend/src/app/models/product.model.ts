@@ -1,3 +1,9 @@
+export interface Category {
+  id: number;
+  name: string;
+  description: string | null;
+}
+
 export interface Product {
   id: number;
   code: string;
@@ -7,6 +13,7 @@ export interface Product {
   sellingPrice: number;
   minStockLimit: number;
   isActive: boolean;
+  categories: Category[];
   createdAt: string;
   updatedAt: string;
 }
@@ -18,6 +25,7 @@ export interface CreateProductDto {
   purchasePrice: number;
   sellingPrice: number;
   minStockLimit?: number;
+  categoryIds?: number[];
 }
 
 export interface ApiResponse<T> {

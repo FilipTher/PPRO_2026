@@ -1,8 +1,11 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductService } from './services/product.service';
-import { Product, CreateProductDto } from './models/product.model';
+import { CategoryService } from './services/category.service';
+import { StockService } from './services/stock.service';
+import { Product, CreateProductDto, Category } from './models/product.model';
+import { ProductStockOverview } from './models/stock.model';
 
 @Component({
   selector: 'app-root',
@@ -13,15 +16,28 @@ import { Product, CreateProductDto } from './models/product.model';
 })
 export class App implements OnInit {
   private readonly productService = inject(ProductService);
+  private readonly categoryService = inject(CategoryService);
+  private readonly stockService = inject(StockService);
+  // Angular 22 běží zoneless, takže async callbacky musí překreslení vyžádat samy.
+  private readonly cdr = inject(ChangeDetectorRef);
 
   products: Product[] = [];
+  categories: Category[] = [];
   isLoading = false;
   errorMessage: string | null = null;
   successMessage: string | null = null;
 
+  // Přepínání pohledů (routing přijde ve fázi 4)
+  activeView: 'products' | 'stock' = 'products';
+
+  // Zásoby po skladech
+  stockOverview: ProductStockOverview[] = [];
+  isStockLoading = false;
+
   // Filtrování
   searchQuery = '';
   showOnlyActive = true;
+  selectedCategoryId: number | null = null;
 
   // Dialog nového produktu
   isModalOpen = false;
@@ -34,18 +50,65 @@ export class App implements OnInit {
     description: '',
     purchasePrice: 0,
     sellingPrice: 0,
-    minStockLimit: 5
+    minStockLimit: 5,
+    categoryIds: []
   };
 
   ngOnInit(): void {
+    this.loadCategories();
     this.loadProducts();
+  }
+
+  loadCategories(): void {
+    this.categoryService.getCategories().subscribe({
+      next: (res) => {
+        if (res.success) {
+          this.categories = res.data;
+        }
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        console.error(err);
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  switchView(view: 'products' | 'stock'): void {
+    this.activeView = view;
+    if (view === 'stock') {
+      this.loadStockOverview();
+    }
+  }
+
+  loadStockOverview(): void {
+    this.isStockLoading = true;
+    this.errorMessage = null;
+
+    this.stockService.getStockOverview().subscribe({
+      next: (res) => {
+        this.isStockLoading = false;
+        if (res.success) {
+          this.stockOverview = res.data;
+        } else {
+          this.errorMessage = res.error || 'Nepodařilo se načíst zásoby.';
+        }
+        this.cdr.markForCheck();
+      },
+      error: (err) => {
+        this.isStockLoading = false;
+        this.errorMessage = 'Chyba připojení k backendu. Ujistěte se, že server běží.';
+        console.error(err);
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   loadProducts(): void {
     this.isLoading = true;
     this.errorMessage = null;
 
-    this.productService.getProducts(this.searchQuery, this.showOnlyActive ? true : undefined).subscribe({
+    this.productService.getProducts(this.searchQuery, this.showOnlyActive ? true : undefined, this.selectedCategoryId ?? undefined).subscribe({
       next: (res) => {
         this.isLoading = false;
         if (res.success) {
@@ -53,11 +116,13 @@ export class App implements OnInit {
         } else {
           this.errorMessage = res.error || 'Nepodařilo se načíst produkty.';
         }
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.isLoading = false;
         this.errorMessage = 'Chyba připojení k backendu. Ujistěte se, že server běží.';
         console.error(err);
+        this.cdr.markForCheck();
       }
     });
   }
@@ -71,6 +136,18 @@ export class App implements OnInit {
     this.loadProducts();
   }
 
+  onCategoryChange(categoryId: number | null): void {
+    this.selectedCategoryId = categoryId;
+    this.loadProducts();
+  }
+
+  toggleCategory(categoryId: number): void {
+    const selected = this.newProduct.categoryIds ?? [];
+    this.newProduct.categoryIds = selected.includes(categoryId)
+      ? selected.filter((id) => id !== categoryId)
+      : [...selected, categoryId];
+  }
+
   openCreateModal(): void {
     this.newProduct = {
       code: '',
@@ -78,7 +155,8 @@ export class App implements OnInit {
       description: '',
       purchasePrice: 0,
       sellingPrice: 0,
-      minStockLimit: 5
+      minStockLimit: 5,
+      categoryIds: []
     };
     this.modalError = null;
     this.isModalOpen = true;
@@ -125,10 +203,12 @@ export class App implements OnInit {
         } else {
           this.modalError = res.error || 'Chyba při ukládání.';
         }
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.isSubmitting = false;
         this.modalError = err.error?.error || 'Chyba serveru při ukládání produktu.';
+        this.cdr.markForCheck();
       }
     });
   }
@@ -144,9 +224,11 @@ export class App implements OnInit {
           this.showToast(`Produkt '${product.name}' byl deaktivován.`);
           this.loadProducts();
         }
+        this.cdr.markForCheck();
       },
       error: (err) => {
         this.errorMessage = 'Nepodařilo se produkt deaktivovat.';
+        this.cdr.markForCheck();
       }
     });
   }
@@ -160,6 +242,7 @@ export class App implements OnInit {
     this.successMessage = message;
     setTimeout(() => {
       this.successMessage = null;
+      this.cdr.markForCheck();
     }, 4000);
   }
 }

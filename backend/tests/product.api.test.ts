@@ -7,6 +7,8 @@ const app = createApp();
 
 describe('Product API (Integrační testy HTTP -> SQLite)', () => {
   afterAll(async () => {
+    // Testovací data nesmí zůstat ve vývojové databázi
+    await prisma.product.deleteMany({ where: { code: { startsWith: 'TEST-PEXESO-' } } });
     await prisma.$disconnect();
   });
 

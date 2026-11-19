@@ -6,6 +6,7 @@ export interface CreateProductDto {
   sellingPrice: number;
   minStockLimit?: number;
   isVariantOfId?: number;
+  categoryIds?: number[];
 }
 
 export interface UpdateProductDto {
@@ -20,6 +21,7 @@ export interface UpdateProductDto {
 export interface ProductFilterDto {
   search?: string;
   isActive?: boolean;
+  categoryId?: number;
 }
 
 export * from './stock.types';

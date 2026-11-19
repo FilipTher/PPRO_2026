@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import { createProductRouter } from './routes/product.routes';
+import { createCategoryRouter } from './routes/category.routes';
+import { createStockRouter } from './routes/stock.routes';
 
 export function createApp() {
   const app = express();
@@ -15,6 +17,12 @@ export function createApp() {
 
   // API modul produktů
   app.use('/api/products', createProductRouter());
+
+  // API modul kategorií
+  app.use('/api/categories', createCategoryRouter());
+
+  // API modul skladových zásob
+  app.use('/api/stock', createStockRouter());
 
   return app;
 }

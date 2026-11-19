@@ -6,7 +6,7 @@ import {
   StockWithWarehouse,
   MovementWithRelations
 } from '../src/repositories/stock.repository';
-import { IProductRepository } from '../src/repositories/product.repository';
+import { IProductRepository, ProductWithCategories } from '../src/repositories/product.repository';
 import { Warehouse, WarehouseStock, StockMovement, Product } from '@prisma/client';
 import {
   ReceiveStockDto,
@@ -134,22 +134,26 @@ class MockStockRepository implements IStockRepository {
 class MockProductRepository implements IProductRepository {
   products: Product[] = [];
 
-  async findAll(filters?: ProductFilterDto): Promise<Product[]> {
-    return this.products.filter((p) => {
-      if (filters?.isActive !== undefined && p.isActive !== filters.isActive) return false;
-      return true;
-    });
+  async findAll(filters?: ProductFilterDto): Promise<ProductWithCategories[]> {
+    return this.products
+      .filter((p) => {
+        if (filters?.isActive !== undefined && p.isActive !== filters.isActive) return false;
+        return true;
+      })
+      .map((p) => ({ ...p, categories: [] }));
   }
 
-  async findById(id: number): Promise<Product | null> {
-    return this.products.find((p) => p.id === id) || null;
+  async findById(id: number): Promise<ProductWithCategories | null> {
+    const product = this.products.find((p) => p.id === id);
+    return product ? { ...product, categories: [] } : null;
   }
 
-  async findByCode(code: string): Promise<Product | null> {
-    return this.products.find((p) => p.code === code) || null;
+  async findByCode(code: string): Promise<ProductWithCategories | null> {
+    const product = this.products.find((p) => p.code === code);
+    return product ? { ...product, categories: [] } : null;
   }
 
-  async create(data: CreateProductDto): Promise<Product> {
+  async create(data: CreateProductDto): Promise<ProductWithCategories> {
     const product: Product = {
       id: this.products.length + 1,
       code: data.code,
@@ -164,21 +168,21 @@ class MockProductRepository implements IProductRepository {
       updatedAt: new Date()
     };
     this.products.push(product);
-    return product;
+    return { ...product, categories: [] };
   }
 
-  async update(id: number, data: UpdateProductDto): Promise<Product> {
-    const p = await this.findById(id);
+  async update(id: number, data: UpdateProductDto): Promise<ProductWithCategories> {
+    const p = this.products.find((product) => product.id === id);
     if (!p) throw new Error('Not found');
     Object.assign(p, data);
-    return p;
+    return { ...p, categories: [] };
   }
 
-  async delete(id: number): Promise<Product> {
-    const p = await this.findById(id);
+  async delete(id: number): Promise<ProductWithCategories> {
+    const p = this.products.find((product) => product.id === id);
     if (!p) throw new Error('Not found');
     p.isActive = false;
-    return p;
+    return { ...p, categories: [] };
   }
 }
 
