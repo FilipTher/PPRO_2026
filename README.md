@@ -93,6 +93,9 @@ Tato sekce zaznamenává klíčová architektonická rozhodnutí a řešení ote
 | ADR-006 | Varianty produktu (Bod 4) | Varianty (např. 3 barvy téže káči) jsou modelovány jako samostatné produkty s vlastním kódem a skladovou zásobou, sdílející volitelnou vazbu na nadřazený produkt (`parentProductId`). | K odsouhlasení |
 | ADR-007 | Změna objednávky po zaplacení (Bod 5) | Editace objednávky po potvrzení/zaplacení je povolena pouze obsluze skladu do okamžiku expedice. Jakákoli změna položek automaticky přepočítá rezervace a zaznamená revizi. Po expedici je změna možná pouze standardní vratkou/reklamací. | K odsouhlasení |
 | ADR-008 | Vertikální řez pro demo (Produkt) | Pro první schválení klientem byl realizován kompletní vertikální řez entitou `Product` (Prisma SQLite -> Repozitář -> Doménová služba s validacemi -> Express REST API -> Angular SPA). Pokryto 12 unit a integračními testy. | Schváleno |
+| ADR-009 | Change detection ve frontendu (Angular 22 = zoneless) | Angular 22 běží bez `zone.js`, takže asynchronní callbacky (HTTP odpovědi, `setTimeout`) samy nespustí překreslení. Každá komponenta, která v async callbacku mění stav, volá `ChangeDetectorRef.markForCheck()` (viz `frontend/src/app/app.ts`); nové komponenty se řídí stejně, jinak UI zůstane viset ve stavu před odpovědí. | Schváleno |
+| ADR-010 | Produkty a kategorie (požadavek 1) | Produkt patří do více kategorií naráz – vazba M:N (`ProductCategory`) je vystavena v API (`GET /api/categories`, `categoryIds` při vytvoření produktu, filtr `GET /api/products?categoryId=`) i v UI (filtr, štítky na kartě, zaškrtávací výběr v dialogu). Kategorie se pouze čtou, zakládají se seedem – klient jejich správu nepožaduje. | K odsouhlasení |
+| ADR-011 | Zásoby po skladech (požadavek 2) | `GET /api/stock/overview` vrací pro každý aktivní produkt fyzický, rezervovaný a disponibilní stav po skladech a flag `isLowStock`. UI ho zobrazuje jako tabulku produkt × sklad; do zavedení routingu (Krok 4.1) je to záložka „Zásoby po skladech“ vedle katalogu, nikoli samostatná routa. | K odsouhlasení |
 
 ---
 
@@ -107,7 +110,7 @@ Tato sekce zaznamenává klíčová architektonická rozhodnutí a řešení ote
 docker compose up --build
 ```
 - Aplikace (Angular UI): `http://localhost:4200`
-- REST API (Backend): `http://localhost:3000/api/products`
+- REST API (Backend): `http://localhost:3100/api/products`
 
 ### 2. Spuštění lokálně během vývoje:
 
@@ -115,10 +118,12 @@ docker compose up --build
 ```bash
 cd backend
 npm install
+cp .env.example .env   # Windows PowerShell: Copy-Item .env.example .env
 npx prisma migrate dev
 npx ts-node prisma/seed.ts
 npm run dev
 ```
+`npm install` automaticky spouští `prisma generate` (skript `postinstall`). Bez souboru `.env` Prisma i server hlásí `Environment variable not found: DATABASE_URL`.
 
 **Spuštění frontendu:**
 ```bash
@@ -126,7 +131,7 @@ cd frontend
 npm install
 npm start
 ```
-Frontend se spustí na `http://localhost:4200` a automaticky přesměrovává volání `/api/*` na backend port 3000.
+Frontend se spustí na `http://localhost:4200` a automaticky přesměrovává volání `/api/*` na backend port 3100.
 
 ### 3. Spuštění automatizovaných testů:
 ```bash
@@ -134,4 +139,5 @@ cd backend
 npm test
 ```
 Provede všechny unit testy doménových pravidel i integrační HTTP testy nad SQLite.
+Integrační testy pracují s vývojovou databází, takže před prvním spuštěním musí proběhnout migrace a seed (viz kroky výše).
 

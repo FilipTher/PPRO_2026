@@ -4,9 +4,9 @@
 Tento dokument slouží jako **kompletní vývojová mapa a zásobník mikrozadání** pro inkrementální vývoj skladového systému. Projekt striktně dodržuje třívrstvou architekturu, relační databázi s migracemi, automatizované testování a jednopříkazové spuštění přes Docker Compose.
 
 > **AKTUÁLNÍ STAV VÝVOJE (Kde jsme skončili)**:
-> - **Poslední dokončený krok**: **Krok 1.2: Doménová služba `StockService` (Příjem na sklad & Audit log)** `[DOKONČENO]`
+> - **Poslední dokončený krok**: **Požadavek 2 – Zásoby po skladech (API + obrazovka)** `[DOKONČENO]`
 > - **Příští krok na řadě**: **Krok 1.3: Přesun mezi sklady a Modul Inventury (ADR-003, ADR-005)**
-> - **Celkem automatizovaných testů**: **22 testů** (100% průchodnost)
+> - **Celkem automatizovaných testů**: **34 testů** (100% průchodnost)
 
 ---
 
@@ -342,7 +342,7 @@ Cílem této závěrečné fáze je zaručit stoprocentní reprodukovatelnost, s
   - Kontrola `backend/Dockerfile` a `frontend/Dockerfile`.
   - Verifikace automatického spuštění migrací a seedu při prvním startu kontejneru.
   - Ověření Nginx konfigurace frontendu a proxy na backend API.
-- **Verifikace**: Příkaz `docker compose up --build` v čistém prostředí nastartuje aplikaci a endpointy na portech 4200 a 3000 odpovídají.
+- **Verifikace**: Příkaz `docker compose up --build` v čistém prostředí nastartuje aplikaci a endpointy na portech 4200 a 3100 odpovídají.
 - **Prompt pro mikrozadání**:
   > *"Proveď Krok 5.1: Zkontroluj a optimalizuj Docker konfiguraci v `docker-compose.yml`, `backend/Dockerfile` a `frontend/Dockerfile`. Ověř, že kontejner provádí migrace i seed a Nginx správně směruje API volání."*
 
