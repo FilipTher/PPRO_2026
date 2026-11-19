@@ -50,3 +50,31 @@ export interface InventoryAdjustmentDto {
   reason: string;
   note?: string;
 }
+
+export type MovementType =
+  | 'RECEIPT'
+  | 'DISPATCH'
+  | 'TRANSFER_IN'
+  | 'TRANSFER_OUT'
+  | 'INVENTORY_ADJUSTMENT';
+
+export interface StockMovement {
+  id: number;
+  productId: number;
+  warehouseId: number;
+  orderId: number | null;
+  movementType: string;
+  quantityChange: number;
+  quantityAfter: number;
+  reason: string | null;
+  note: string | null;
+  createdAt: string;
+  product: { id: number; code: string; name: string };
+  warehouse: { id: number; code: string; name: string };
+}
+
+export interface MovementFilter {
+  productId?: number;
+  warehouseId?: number;
+  movementType?: string;
+}

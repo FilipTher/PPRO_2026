@@ -1,0 +1,122 @@
+<section class="page-header">
+  <div>
+    <h2 class="page-title">Pohyby</h2>
+    <p class="page-desc">Auditní kniha každého kusu – odpovídá na otázku „kde je ta káča, co jsem ji měl minulý týden“.</p>
+  </div>
+
+  <button class="btn btn-ghost" (click)="loadMovements()">↻ Obnovit</button>
+</section>
+
+<div class="toast-alert toast-danger" *ngIf="errorMessage">
+  <span>⚠</span> {{ errorMessage }}
+</div>
+
+<section class="toolbar-card">
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input
+      type="text"
+      placeholder="Hledat v produktu, skladu, důvodu nebo poznámce..."
+      class="search-input"
+      [(ngModel)]="searchText"
+      id="movement-search"
+    />
+  </div>
+
+  <div class="filter-actions">
+    <select
+      class="category-select"
+      [ngModel]="movementType"
+      (ngModelChange)="movementType = $event; loadMovements()"
+      title="Typ pohybu"
+    >
+      <option value="">Všechny typy</option>
+      <option *ngFor="let type of movementTypes" [value]="type.value">{{ type.label }}</option>
+    </select>
+
+    <select
+      class="category-select"
+      [ngModel]="warehouseId"
+      (ngModelChange)="warehouseId = $event; loadMovements()"
+      title="Sklad"
+    >
+      <option [ngValue]="null">Všechny sklady</option>
+      <option *ngFor="let wh of warehouses" [ngValue]="wh.id">{{ wh.name }}</option>
+    </select>
+
+    <select
+      class="category-select"
+      [ngModel]="productId"
+      (ngModelChange)="productId = $event; loadMovements()"
+      title="Produkt"
+    >
+      <option [ngValue]="null">Všechny produkty</option>
+      <option *ngFor="let product of products" [ngValue]="product.id">
+        {{ product.code }} – {{ product.name }}
+      </option>
+    </select>
+  </div>
+</section>
+
+<div class="loading-state" *ngIf="isLoading">
+  <div class="spinner"></div>
+  <p>Načítám historii pohybů...</p>
+</div>
+
+<div class="empty-state" *ngIf="!isLoading && filteredMovements.length === 0">
+  <div class="empty-icon">🔁</div>
+  <h3>Žádné pohyby nenalezeny</h3>
+  <p>Zkuste změnit filtry, nebo zatím žádné skladové pohyby nejsou.</p>
+</div>
+
+<div class="table-card" *ngIf="!isLoading && filteredMovements.length > 0">
+  <div class="table-wrap">
+    <table class="stock-table movements-table">
+      <thead>
+        <tr>
+          <th>Datum</th>
+          <th>Produkt</th>
+          <th>Sklad</th>
+          <th>Typ</th>
+          <th>Změna</th>
+          <th>Stav po</th>
+          <th>Důvod / poznámka</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let movement of filteredMovements">
+          <td class="movement-date">{{ movement.createdAt | date:'dd.MM.yyyy HH:mm' }}</td>
+          <td>
+            <span class="product-code">{{ movement.product.code }}</span>
+            <div class="stock-name">{{ movement.product.name }}</div>
+          </td>
+          <td>{{ movement.warehouse.name }}</td>
+          <td>
+            <span class="movement-badge" [ngClass]="badgeClass(movement.movementType)">
+              {{ typeLabel(movement.movementType) }}
+            </span>
+          </td>
+          <td>
+            <span
+              class="movement-change"
+              [class.positive]="movement.quantityChange > 0"
+              [class.negative]="movement.quantityChange < 0"
+            >
+              {{ movement.quantityChange > 0 ? '+' : '' }}{{ movement.quantityChange }} ks
+            </span>
+          </td>
+          <td>{{ movement.quantityAfter }} ks</td>
+          <td class="movement-reason">
+            {{ movement.reason || '—' }}
+            @if (movement.orderId) {
+              <span class="movement-order">obj. #{{ movement.orderId }}</span>
+            }
+            @if (movement.note) {
+              <div class="stock-sub">{{ movement.note }}</div>
+            }
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

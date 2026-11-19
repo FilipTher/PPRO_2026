@@ -1,10 +1,12 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import {
   InventoryAdjustmentDto,
+  MovementFilter,
   ProductStockOverview,
   ReceiveStockDto,
+  StockMovement,
   TransferStockDto,
   Warehouse
 } from '../models/stock.model';
@@ -35,5 +37,20 @@ export class StockService {
 
   reconcileInventory(dto: InventoryAdjustmentDto): Observable<ApiResponse<unknown>> {
     return this.http.post<ApiResponse<unknown>>(`${this.apiUrl}/inventory`, dto);
+  }
+
+  getMovements(filters?: MovementFilter): Observable<ApiResponse<StockMovement[]>> {
+    let params = new HttpParams();
+    if (filters?.productId !== undefined) {
+      params = params.set('productId', String(filters.productId));
+    }
+    if (filters?.warehouseId !== undefined) {
+      params = params.set('warehouseId', String(filters.warehouseId));
+    }
+    if (filters?.movementType) {
+      params = params.set('movementType', filters.movementType);
+    }
+
+    return this.http.get<ApiResponse<StockMovement[]>>(`${this.apiUrl}/movements`, { params });
   }
 }
