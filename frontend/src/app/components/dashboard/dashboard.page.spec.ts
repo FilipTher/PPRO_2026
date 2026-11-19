@@ -174,7 +174,7 @@ describe('DashboardPage (dashboard)', () => {
     expect(rows.length).toBe(1);
     expect(rows[0].textContent).toContain('JEZEK-KLEC-DREV');
     expect(rows[0].textContent).toContain('Kritické');
-    expect(rows[0].textContent).toContain('doporučeno 5 ks');
+    expect(rows[0].textContent).toContain('Naskladnit 5 ks');
   });
 
   it('měl by zobrazit obrat po kategoriích s progress bary', () => {

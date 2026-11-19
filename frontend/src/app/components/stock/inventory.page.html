@@ -14,31 +14,37 @@
     >
       <option *ngFor="let wh of warehouses" [ngValue]="wh.id">{{ wh.name }}</option>
     </select>
-    <button class="btn btn-ghost" (click)="loadOverview()">↻ Obnovit</button>
+    <button class="btn btn-ghost" (click)="loadOverview()">
+      <svg class="icon icon-sm" aria-hidden="true"><use href="#i-refresh" /></svg> Obnovit
+    </button>
   </div>
 </section>
 
 <div class="toast-alert toast-success" *ngIf="successMessage">
-  <span>✓</span> {{ successMessage }}
+  <svg class="icon icon-sm" aria-hidden="true"><use href="#i-check" /></svg> {{ successMessage }}
 </div>
 
 <div class="toast-alert toast-danger" *ngIf="errorMessage">
-  <span>⚠</span> {{ errorMessage }}
+  <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert" /></svg> {{ errorMessage }}
 </div>
 
-<div class="loading-state" *ngIf="isLoading">
-  <div class="spinner"></div>
-  <p>Načítám zásoby pro inventuru...</p>
+<div class="table-card" *ngIf="isLoading">
+  <div class="skeleton-row" *ngFor="let i of [1, 2, 3, 4]">
+    <div class="skeleton skeleton-line"></div>
+    <div class="skeleton skeleton-line" style="width: 50%"></div>
+    <div class="skeleton skeleton-line" style="width: 70%"></div>
+    <div class="skeleton skeleton-line" style="width: 50%"></div>
+  </div>
 </div>
 
 <div class="empty-state" *ngIf="!isLoading && rows.length === 0">
-  <div class="empty-icon">📋</div>
+  <div class="empty-icon"><svg class="icon" aria-hidden="true"><use href="#i-clipboard" /></svg></div>
   <h3>Nejsou co počítat</h3>
   <p>Vybraný sklad zatím neobsahuje žádné aktivní produkty.</p>
 </div>
 
 <ng-container *ngIf="!isLoading && rows.length > 0">
-  <div class="table-card">
+  <div class="table-card table-cards">
     <div class="table-wrap">
       <table class="stock-table">
         <thead>
@@ -51,14 +57,14 @@
         </thead>
         <tbody>
           <tr *ngFor="let row of rows">
-            <td>
+            <td data-label="">
               <span class="product-code">{{ row.productCode }}</span>
               <div class="stock-name">{{ row.productName }}</div>
             </td>
-            <td>
+            <td class="num" data-label="V systému">
               <div class="stock-qty">{{ row.currentPhysical }} ks</div>
             </td>
-            <td>
+            <td data-label="Napočítáno">
               <input
                 type="number"
                 min="0"
@@ -68,7 +74,7 @@
                 [(ngModel)]="row.counted"
               />
             </td>
-            <td>
+            <td class="num" data-label="Rozdíl">
               <span class="diff" [ngClass]="differenceClass(row)">{{ differenceLabel(row) }}</span>
             </td>
           </tr>
@@ -97,6 +103,7 @@
       [disabled]="isSubmitting"
       id="btn-save-inventory"
     >
+      <svg class="icon icon-sm" aria-hidden="true"><use href="#i-check" /></svg>
       {{ isSubmitting ? 'Ukládám...' : 'Uložit inventuru' }}
     </button>
   </section>

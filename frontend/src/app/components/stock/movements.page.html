@@ -4,16 +4,18 @@
     <p class="page-desc">Auditní kniha každého kusu – odpovídá na otázku „kde je ta káča, co jsem ji měl minulý týden“.</p>
   </div>
 
-  <button class="btn btn-ghost" (click)="loadMovements()">↻ Obnovit</button>
+  <button class="btn btn-ghost" (click)="loadMovements()">
+    <svg class="icon icon-sm" aria-hidden="true"><use href="#i-refresh" /></svg> Obnovit
+  </button>
 </section>
 
 <div class="toast-alert toast-danger" *ngIf="errorMessage">
-  <span>⚠</span> {{ errorMessage }}
+  <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert" /></svg> {{ errorMessage }}
 </div>
 
 <section class="toolbar-card">
   <div class="search-box">
-    <span class="search-icon">🔍</span>
+    <svg class="icon icon-sm" aria-hidden="true"><use href="#i-search" /></svg>
     <input
       type="text"
       placeholder="Hledat v produktu, skladu, důvodu nebo poznámce..."
@@ -58,18 +60,22 @@
   </div>
 </section>
 
-<div class="loading-state" *ngIf="isLoading">
-  <div class="spinner"></div>
-  <p>Načítám historii pohybů...</p>
+<div class="table-card" *ngIf="isLoading">
+  <div class="skeleton-row" *ngFor="let i of [1, 2, 3, 4, 5]">
+    <div class="skeleton skeleton-line"></div>
+    <div class="skeleton skeleton-line"></div>
+    <div class="skeleton skeleton-line" style="width: 60%"></div>
+    <div class="skeleton skeleton-line" style="width: 50%"></div>
+  </div>
 </div>
 
 <div class="empty-state" *ngIf="!isLoading && filteredMovements.length === 0">
-  <div class="empty-icon">🔁</div>
+  <div class="empty-icon"><svg class="icon" aria-hidden="true"><use href="#i-arrows" /></svg></div>
   <h3>Žádné pohyby nenalezeny</h3>
   <p>Zkuste změnit filtry, nebo zatím žádné skladové pohyby nejsou.</p>
 </div>
 
-<div class="table-card" *ngIf="!isLoading && filteredMovements.length > 0">
+<div class="table-card table-cards" *ngIf="!isLoading && filteredMovements.length > 0">
   <div class="table-wrap">
     <table class="stock-table movements-table">
       <thead>
@@ -85,18 +91,18 @@
       </thead>
       <tbody>
         <tr *ngFor="let movement of filteredMovements">
-          <td class="movement-date">{{ movement.createdAt | date:'dd.MM.yyyy HH:mm' }}</td>
-          <td>
+          <td class="movement-date" data-label="Datum">{{ movement.createdAt | date:'dd.MM.yyyy HH:mm' }}</td>
+          <td data-label="">
             <span class="product-code">{{ movement.product.code }}</span>
             <div class="stock-name">{{ movement.product.name }}</div>
           </td>
-          <td>{{ movement.warehouse.name }}</td>
-          <td>
+          <td data-label="Sklad">{{ movement.warehouse.name }}</td>
+          <td data-label="Typ">
             <span class="movement-badge" [ngClass]="badgeClass(movement.movementType)">
               {{ typeLabel(movement.movementType) }}
             </span>
           </td>
-          <td>
+          <td class="num" data-label="Změna">
             <span
               class="movement-change"
               [class.positive]="movement.quantityChange > 0"
@@ -105,8 +111,8 @@
               {{ movement.quantityChange > 0 ? '+' : '' }}{{ movement.quantityChange }} ks
             </span>
           </td>
-          <td>{{ movement.quantityAfter }} ks</td>
-          <td class="movement-reason">
+          <td class="num" data-label="Stav po">{{ movement.quantityAfter }} ks</td>
+          <td class="movement-reason" data-label="Důvod">
             {{ movement.reason || '—' }}
             @if (movement.orderId) {
               <span class="movement-order">obj. #{{ movement.orderId }}</span>

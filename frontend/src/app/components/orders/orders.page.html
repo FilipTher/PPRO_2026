@@ -5,16 +5,16 @@
   </div>
 
   <button class="btn btn-primary" (click)="openCreate()" id="btn-new-order">
-    <span class="btn-icon">+</span> Nová objednávka
+    <svg class="icon icon-sm" aria-hidden="true"><use href="#i-plus" /></svg> Nová objednávka
   </button>
 </section>
 
 <div class="toast-alert toast-success" *ngIf="successMessage">
-  <span>✓</span> {{ successMessage }}
+  <svg class="icon icon-sm" aria-hidden="true"><use href="#i-check" /></svg> {{ successMessage }}
 </div>
 
 <div class="toast-alert toast-danger" *ngIf="errorMessage">
-  <span>⚠</span> {{ errorMessage }}
+  <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert" /></svg> {{ errorMessage }}
 </div>
 
 <section class="toolbar-card">
@@ -29,21 +29,27 @@
       <option *ngFor="let option of statusOptions" [value]="option.value">{{ option.label }}</option>
     </select>
   </div>
-  <button class="btn btn-ghost" (click)="loadOrders()">↻ Obnovit</button>
+  <button class="btn btn-ghost" (click)="loadOrders()">
+    <svg class="icon icon-sm" aria-hidden="true"><use href="#i-refresh" /></svg> Obnovit
+  </button>
 </section>
 
-<div class="loading-state" *ngIf="isLoading">
-  <div class="spinner"></div>
-  <p>Načítám objednávky...</p>
+<div class="table-card" *ngIf="isLoading">
+  <div class="skeleton-row" *ngFor="let i of [1, 2, 3, 4]">
+    <div class="skeleton skeleton-line"></div>
+    <div class="skeleton skeleton-line"></div>
+    <div class="skeleton skeleton-line" style="width: 50%"></div>
+    <div class="skeleton skeleton-line" style="width: 60%"></div>
+  </div>
 </div>
 
 <div class="empty-state" *ngIf="!isLoading && orders.length === 0">
-  <div class="empty-icon">🧾</div>
+  <div class="empty-icon"><svg class="icon" aria-hidden="true"><use href="#i-receipt" /></svg></div>
   <h3>Žádné objednávky</h3>
   <p>Vytvořte první objednávku – zásoby se okamžitě rezervují.</p>
 </div>
 
-<div class="table-card" *ngIf="!isLoading && orders.length > 0">
+<div class="table-card table-cards" *ngIf="!isLoading && orders.length > 0">
   <div class="table-wrap">
     <table class="stock-table orders-table">
       <thead>
@@ -59,16 +65,16 @@
       </thead>
       <tbody>
         <tr *ngFor="let order of orders">
-          <td><span class="product-code">{{ order.orderNumber }}</span></td>
-          <td>
+          <td data-label="Číslo"><span class="product-code">{{ order.orderNumber }}</span></td>
+          <td data-label="">
             <div class="stock-name">{{ order.customer.name }}</div>
             <div class="stock-sub">{{ order.customer.email }}</div>
           </td>
-          <td class="movement-date">{{ order.createdAt | date:'dd.MM.yyyy HH:mm' }}</td>
-          <td><span [ngClass]="statusClass(order.status)">{{ statusLabel(order.status) }}</span></td>
-          <td>{{ order.items.length }}</td>
-          <td class="order-total">{{ orderTotal(order) | number:'1.0-2' }} Kč</td>
-          <td>
+          <td class="movement-date" data-label="Vytvořeno">{{ order.createdAt | date:'dd.MM.yyyy HH:mm' }}</td>
+          <td data-label="Stav"><span [ngClass]="statusClass(order.status)">{{ statusLabel(order.status) }}</span></td>
+          <td class="num" data-label="Položky">{{ order.items.length }}</td>
+          <td class="num order-total" data-label="Celkem">{{ orderTotal(order) | number:'1.0-2' }} Kč</td>
+          <td data-label="">
             <div class="row-actions">
               <button class="btn-row" (click)="openDetail(order)">Detail</button>
               @if (order.status === 'RESERVED') {
@@ -93,11 +99,13 @@
         <h3 class="modal-title">Nová objednávka</h3>
         <p class="modal-subtitle">Zásoby se rezervují okamžitě; expedice je odepíše fyzicky.</p>
       </div>
-      <button class="btn-close" (click)="closeCreate()">✕</button>
+      <button class="btn-close" (click)="closeCreate()" aria-label="Zavřít dialog">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-close" /></svg>
+      </button>
     </div>
 
     <div class="modal-error" *ngIf="createError">
-      <span>⚠</span> {{ createError }}
+      <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert" /></svg> {{ createError }}
     </div>
 
     <form (ngSubmit)="submitCreate()">
@@ -190,7 +198,15 @@
             title="Počet kusů"
           />
 
-          <button type="button" class="btn-icon-danger" (click)="removeItemRow(i)" title="Odebrat položku">✕</button>
+          <button
+            type="button"
+            class="btn-icon-danger"
+            (click)="removeItemRow(i)"
+            title="Odebrat položku"
+            aria-label="Odebrat položku"
+          >
+            <svg class="icon icon-sm" aria-hidden="true"><use href="#i-close" /></svg>
+          </button>
 
           <div class="order-item-hint" [class.error]="rowError(row)">
             <span *ngIf="rowError(row); else availableHint">{{ rowError(row) }}</span>
@@ -225,12 +241,15 @@
           <span [ngClass]="statusClass(detailOrder.status)">{{ statusLabel(detailOrder.status) }}</span>
         </p>
       </div>
-      <button class="btn-close" (click)="closeDetail()">✕</button>
+      <button class="btn-close" (click)="closeDetail()" aria-label="Zavřít detail">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-close" /></svg>
+      </button>
     </div>
 
     @if (detailOrder.status === 'CANCELLED' && detailOrder.cancelReason) {
       <div class="modal-error">
-        <span>ℹ</span> Důvod storna: {{ detailOrder.cancelReason }}
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert" /></svg>
+        Důvod storna: {{ detailOrder.cancelReason }}
       </div>
     }
 
@@ -252,9 +271,9 @@
               <div class="stock-name">{{ item.product.name }}</div>
             </td>
             <td>{{ item.warehouse.name }}</td>
-            <td>{{ item.quantity }} ks</td>
-            <td>{{ item.unitPrice | number:'1.0-2' }} Kč</td>
-            <td>{{ item.unitPrice * item.quantity | number:'1.0-2' }} Kč</td>
+            <td class="num">{{ item.quantity }} ks</td>
+            <td class="num">{{ item.unitPrice | number:'1.0-2' }} Kč</td>
+            <td class="num">{{ item.unitPrice * item.quantity | number:'1.0-2' }} Kč</td>
           </tr>
         </tbody>
       </table>

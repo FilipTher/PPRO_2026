@@ -1,10 +1,10 @@
 <!-- Feedback Alerts -->
 <div class="toast-alert toast-success" *ngIf="successMessage">
-  <span>✓</span> {{ successMessage }}
+  <svg class="icon icon-sm" aria-hidden="true"><use href="#i-check" /></svg> {{ successMessage }}
 </div>
 
 <div class="toast-alert toast-danger" *ngIf="errorMessage">
-  <span>⚠</span> {{ errorMessage }}
+  <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert" /></svg> {{ errorMessage }}
 </div>
 
 <!-- Header -->
@@ -15,14 +15,14 @@
   </div>
 
   <button class="btn btn-primary" (click)="openCreateModal()" id="btn-add-product">
-    <span class="btn-icon">+</span> Přidat novou hračku
+    <svg class="icon icon-sm" aria-hidden="true"><use href="#i-plus" /></svg> Přidat novou hračku
   </button>
 </section>
 
 <!-- Toolbar: Search & Filters -->
 <section class="toolbar-card">
   <div class="search-box">
-    <span class="search-icon">🔍</span>
+    <svg class="icon icon-sm" aria-hidden="true"><use href="#i-search" /></svg>
     <input
       type="text"
       placeholder="Hledat podle kódu (např. KACA), názvu nebo popisu..."
@@ -53,20 +53,24 @@
       {{ showOnlyActive ? 'Zobrazeny aktivní' : 'Včetně vyřazených' }}
     </button>
     <button class="btn btn-ghost" (click)="loadProducts()" title="Obnovit data ze SQLite">
-      ↻ Obnovit
+      <svg class="icon icon-sm" aria-hidden="true"><use href="#i-refresh" /></svg> Obnovit
     </button>
   </div>
 </section>
 
 <!-- Loading State -->
-<div class="loading-state" *ngIf="isLoading">
-  <div class="spinner"></div>
-  <p>Načítám hračky ze skladu...</p>
+<div class="product-grid" *ngIf="isLoading">
+  <div class="product-card skeleton-card" *ngFor="let i of [1, 2, 3]">
+    <div class="skeleton skeleton-line" style="width: 35%"></div>
+    <div class="skeleton" style="height: 22px; width: 70%"></div>
+    <div class="skeleton skeleton-line" style="width: 100%"></div>
+    <div class="skeleton" style="height: 64px; margin-top: auto"></div>
+  </div>
 </div>
 
 <!-- Empty State -->
 <div class="empty-state" *ngIf="!isLoading && products.length === 0">
-  <div class="empty-icon">📦</div>
+  <div class="empty-icon"><svg class="icon" aria-hidden="true"><use href="#i-package" /></svg></div>
   <h3>Žádné produkty nenalezeny</h3>
   <p>Zkuste upravit vyhledávací dotaz nebo přidejte novou položku do katalogu.</p>
   <button class="btn btn-primary mt-4" (click)="openCreateModal()">Přidat první hračku</button>
@@ -96,7 +100,9 @@
         <span class="price-val text-muted">{{ p.purchasePrice | number:'1.0-2' }} Kč</span>
       </div>
 
-      <div class="price-divider">➔</div>
+      <div class="price-divider">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-arrow-right" /></svg>
+      </div>
 
       <div class="price-item">
         <span class="price-label">Prodejní cena</span>
@@ -119,8 +125,9 @@
         class="btn-icon-danger"
         (click)="deactivateProduct(p)"
         title="Deaktivovat produkt"
+        [attr.aria-label]="'Deaktivovat produkt ' + p.name"
       >
-        ✕
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-close" /></svg>
       </button>
     </div>
   </div>
@@ -134,11 +141,13 @@
         <h3 class="modal-title">Přidat dřevěnou hračku do skladu</h3>
         <p class="modal-subtitle">Nová položka bude okamžitě uložena do SQLite databáze.</p>
       </div>
-      <button class="btn-close" (click)="closeModal()">✕</button>
+      <button class="btn-close" (click)="closeModal()" aria-label="Zavřít dialog">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-close" /></svg>
+      </button>
     </div>
 
     <div class="modal-error" *ngIf="modalError">
-      <span>⚠</span> {{ modalError }}
+      <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert" /></svg> {{ modalError }}
     </div>
 
     <form (ngSubmit)="submitCreate()" class="modal-form">

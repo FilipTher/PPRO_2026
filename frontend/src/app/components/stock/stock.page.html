@@ -4,35 +4,43 @@
     <p class="page-desc">Fyzický, rezervovaný a disponibilní stav každé hračky v Hradci Králové a v garáži.</p>
   </div>
 
-  <button class="btn btn-ghost" (click)="load()">↻ Obnovit</button>
+  <button class="btn btn-ghost" (click)="load()">
+    <svg class="icon icon-sm" aria-hidden="true"><use href="#i-refresh" /></svg> Obnovit
+  </button>
 </section>
 
 <div class="toast-alert toast-success" *ngIf="successMessage">
-  <span>✓</span> {{ successMessage }}
+  <svg class="icon icon-sm" aria-hidden="true"><use href="#i-check" /></svg> {{ successMessage }}
 </div>
 
 <div class="toast-alert toast-danger" *ngIf="errorMessage">
-  <span>⚠</span> {{ errorMessage }}
+  <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert" /></svg> {{ errorMessage }}
 </div>
 
-<div class="loading-state" *ngIf="isLoading">
-  <div class="spinner"></div>
-  <p>Načítám zásoby ze skladů...</p>
+<div class="table-card" *ngIf="isLoading">
+  <div class="skeleton-row" *ngFor="let i of [1, 2, 3, 4]">
+    <div class="skeleton skeleton-line"></div>
+    <div class="skeleton skeleton-line"></div>
+    <div class="skeleton skeleton-line"></div>
+    <div class="skeleton skeleton-line" style="width: 60%"></div>
+  </div>
 </div>
 
 <div class="empty-state" *ngIf="!isLoading && overview.length === 0">
-  <div class="empty-icon">📦</div>
+  <div class="empty-icon"><svg class="icon" aria-hidden="true"><use href="#i-boxes" /></svg></div>
   <h3>Žádné zásoby k zobrazení</h3>
   <p>Zatím nejsou evidovány žádné aktivní produkty se skladovými kartami.</p>
 </div>
 
-<div class="table-card" *ngIf="!isLoading && overview.length > 0">
+<div class="table-card table-cards" *ngIf="!isLoading && overview.length > 0">
   <div class="table-wrap">
     <table class="stock-table">
       <thead>
         <tr>
           <th>Produkt</th>
-          <th *ngFor="let wh of overview[0].stocks">{{ wh.warehouseName }}</th>
+          <th *ngFor="let wh of overview[0].stocks" [title]="wh.warehouseName">
+            {{ wh.warehouseCode === 'WH-HK' ? 'Hradec Králové' : 'Garáž Třebechovice' }}
+          </th>
           <th>Celkem</th>
           <th>Stav</th>
           <th>Akce</th>
@@ -40,27 +48,35 @@
       </thead>
       <tbody>
         <tr *ngFor="let row of overview">
-          <td>
+          <td data-label="">
             <span class="product-code">{{ row.productCode }}</span>
             <div class="stock-name">{{ row.productName }}</div>
           </td>
-          <td *ngFor="let wh of row.stocks">
+          <td
+            class="num"
+            *ngFor="let wh of row.stocks"
+            [attr.data-label]="wh.warehouseCode === 'WH-HK' ? 'Hradec' : 'Garáž'"
+          >
             <div class="stock-qty">{{ wh.physicalQuantity }} ks</div>
             <div class="stock-sub">{{ wh.reservedQuantity }} rez. · {{ wh.availableQuantity }} volných</div>
           </td>
-          <td>
+          <td class="num" data-label="Celkem">
             <div class="stock-qty">{{ row.totalAvailableQuantity }} ks</div>
             <div class="stock-sub">z {{ row.totalPhysicalQuantity }} fyzicky</div>
           </td>
-          <td>
+          <td data-label="Stav">
             <span class="badge" [class.badge-danger]="row.isLowStock" [class.badge-success]="!row.isLowStock">
               {{ row.isLowStock ? 'Pod minimem (min. ' + row.minStockLimit + ')' : 'V pořádku' }}
             </span>
           </td>
-          <td>
+          <td data-label="">
             <div class="row-actions">
-              <button class="btn-row" (click)="openReceipt(row)">+ Naskladnit</button>
-              <button class="btn-row" (click)="openTransfer(row)">↔ Přesunout</button>
+              <button class="btn-row" (click)="openReceipt(row)">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-plus" /></svg> Naskladnit
+              </button>
+              <button class="btn-row" (click)="openTransfer(row)">
+                <svg class="icon icon-sm" aria-hidden="true"><use href="#i-transfer" /></svg> Přesunout
+              </button>
             </div>
           </td>
         </tr>
@@ -77,11 +93,13 @@
         <h3 class="modal-title">Naskladnit: {{ receiptProduct.productName }}</h3>
         <p class="modal-subtitle">{{ receiptProduct.productCode }} · zásoba se navýší a zapíše se pohyb RECEIPT</p>
       </div>
-      <button class="btn-close" (click)="closeReceipt()">✕</button>
+      <button class="btn-close" (click)="closeReceipt()" aria-label="Zavřít dialog">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-close" /></svg>
+      </button>
     </div>
 
     <div class="modal-error" *ngIf="receiptError">
-      <span>⚠</span> {{ receiptError }}
+      <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert" /></svg> {{ receiptError }}
     </div>
 
     <form (ngSubmit)="submitReceipt()">
@@ -136,11 +154,13 @@
         <h3 class="modal-title">Přesunout: {{ transferProduct.productName }}</h3>
         <p class="modal-subtitle">{{ transferProduct.productCode }} · přesunout lze jen volné kusy</p>
       </div>
-      <button class="btn-close" (click)="closeTransfer()">✕</button>
+      <button class="btn-close" (click)="closeTransfer()" aria-label="Zavřít dialog">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-close" /></svg>
+      </button>
     </div>
 
     <div class="modal-error" *ngIf="transferError">
-      <span>⚠</span> {{ transferError }}
+      <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert" /></svg> {{ transferError }}
     </div>
 
     <form (ngSubmit)="submitTransfer()">

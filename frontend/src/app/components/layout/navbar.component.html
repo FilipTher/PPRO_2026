@@ -1,11 +1,13 @@
 <header class="top-nav">
   <div class="nav-container">
-    <a class="brand" routerLink="/produkty">
-      <div class="brand-icon">🧸</div>
-      <div>
+    <a class="brand" routerLink="/produkty" aria-label="Dřevěnka – katalog produktů">
+      <span class="brand-mark" aria-hidden="true">
+        <svg class="icon"><use href="#i-brand" /></svg>
+      </span>
+      <span class="brand-text">
         <h1 class="brand-title">Dřevěnka s.r.o.</h1>
-        <p class="brand-subtitle">Skladový systém • Hradec Králové &amp; Třebechovice</p>
-      </div>
+        <p class="brand-subtitle">Skladový systém · HK &amp; Třebechovice</p>
+      </span>
     </a>
 
     <button
@@ -14,22 +16,47 @@
       (click)="toggleMenu()"
       [attr.aria-expanded]="isMenuOpen"
       aria-controls="main-nav"
-      aria-label="Otevřít navigaci"
+      [attr.aria-label]="isMenuOpen ? 'Zavřít navigaci' : 'Otevřít navigaci'"
     >
-      {{ isMenuOpen ? '✕' : '☰' }}
+      <svg class="icon" aria-hidden="true">
+        <use [attr.href]="isMenuOpen ? '#i-close' : '#i-menu'" />
+      </svg>
     </button>
 
     <nav class="nav-links" id="main-nav" [class.open]="isMenuOpen">
-      <a routerLink="/dashboard" routerLinkActive="active">📊 Dashboard</a>
-      <a routerLink="/produkty" routerLinkActive="active">🧸 Produkty</a>
-      <a routerLink="/zasoby" routerLinkActive="active">📦 Zásoby</a>
-      <a routerLink="/inventura" routerLinkActive="active">📋 Inventura</a>
-      <a routerLink="/pohyby" routerLinkActive="active">🔁 Pohyby</a>
-      <a routerLink="/objednavky" routerLinkActive="active">🧾 Objednávky</a>
+      <a routerLink="/dashboard" routerLinkActive="active">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-grid" /></svg>
+        <span>Dashboard</span>
+      </a>
+      <a routerLink="/produkty" routerLinkActive="active">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-tag" /></svg>
+        <span>Produkty</span>
+      </a>
+      <a routerLink="/zasoby" routerLinkActive="active">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-boxes" /></svg>
+        <span>Zásoby</span>
+      </a>
+      <a routerLink="/inventura" routerLinkActive="active">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-clipboard" /></svg>
+        <span>Inventura</span>
+      </a>
+      <a routerLink="/pohyby" routerLinkActive="active">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-arrows" /></svg>
+        <span>Pohyby</span>
+      </a>
+      <a routerLink="/objednavky" routerLinkActive="active">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-receipt" /></svg>
+        <span>Objednávky</span>
+      </a>
       <a routerLink="/reporty" routerLinkActive="active" class="nav-alert">
-        📈 Reporty
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-chart" /></svg>
+        <span>Reporty</span>
         @if (lowStockCount > 0) {
-          <span class="alert-badge" [class.critical]="hasCritical" [title]="'Položek pod minimem: ' + lowStockCount">
+          <span
+            class="alert-badge"
+            [class.critical]="hasCritical"
+            [title]="'Položek pod minimem: ' + lowStockCount"
+          >
             {{ lowStockCount }}
           </span>
         }

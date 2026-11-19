@@ -4,49 +4,64 @@
     <p class="page-desc">Co hoří, kolik máme na skladech a co nás živí.</p>
   </div>
 
-  <button class="btn btn-ghost" (click)="load()">↻ Obnovit</button>
+  <button class="btn btn-ghost" (click)="load()">
+    <svg class="icon icon-sm" aria-hidden="true"><use href="#i-refresh" /></svg> Obnovit
+  </button>
 </section>
 
 <div class="toast-alert toast-success" *ngIf="successMessage">
-  <span>✓</span> {{ successMessage }}
+  <svg class="icon icon-sm" aria-hidden="true"><use href="#i-check" /></svg> {{ successMessage }}
 </div>
 
 <div class="toast-alert toast-danger" *ngIf="errorMessage">
-  <span>⚠</span> {{ errorMessage }}
+  <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert" /></svg> {{ errorMessage }}
 </div>
 
-<div class="loading-state" *ngIf="isLoading">
-  <div class="spinner"></div>
-  <p>Načítám přehled firmy...</p>
+<div *ngIf="isLoading">
+  <div class="kpi-strip">
+    <div class="kpi" *ngFor="let i of [1, 2, 3, 4]">
+      <div class="skeleton skeleton-line" style="width: 60%"></div>
+      <div class="skeleton" style="height: 26px; width: 45%"></div>
+    </div>
+  </div>
+  <div class="revenue-grid">
+    <div class="panel" *ngFor="let i of [1, 2]">
+      <div class="skeleton skeleton-line" style="width: 40%; margin-bottom: 1rem"></div>
+      <div class="skeleton skeleton-line" *ngFor="let j of [1, 2, 3]" style="margin-bottom: .75rem"></div>
+    </div>
+  </div>
 </div>
 
 <ng-container *ngIf="!isLoading">
   <!-- Metriky skladu -->
-  <div class="metric-grid">
-    <div class="metric-card">
-      <span class="metric-label">Hodnota skladu (nákupní)</span>
-      <span class="metric-value">{{ purchaseValue | number:'1.0-0' }} Kč</span>
+  <div class="kpi-strip">
+    <div class="kpi">
+      <span class="kpi-label">Hodnota skladu · nákupní</span>
+      <span class="kpi-value">{{ purchaseValue | number:'1.0-0' }} Kč</span>
     </div>
-    <div class="metric-card">
-      <span class="metric-label">Hodnota skladu (prodejní)</span>
-      <span class="metric-value accent">{{ sellingValue | number:'1.0-0' }} Kč</span>
+    <div class="kpi">
+      <span class="kpi-label">Hodnota skladu · prodejní</span>
+      <span class="kpi-value accent">{{ sellingValue | number:'1.0-0' }} Kč</span>
     </div>
-    <div class="metric-card">
-      <span class="metric-label">Kusy na skladech</span>
-      <span class="metric-value">{{ piecesHk + piecesTrb }} ks</span>
-      <span class="metric-sub">Hradec {{ piecesHk }} · garáž {{ piecesTrb }}</span>
+    <div class="kpi">
+      <span class="kpi-label">Kusy na skladech</span>
+      <span class="kpi-value">{{ piecesHk + piecesTrb }} ks</span>
+      <span class="kpi-sub">Hradec {{ piecesHk }} · garáž {{ piecesTrb }}</span>
     </div>
-    <div class="metric-card">
-      <span class="metric-label">Objednávky k vyřízení</span>
-      <span class="metric-value" [class.danger]="pendingOrders > 0">{{ pendingOrders }}</span>
-      <span class="metric-sub">rezervované + čekající</span>
+    <div class="kpi">
+      <span class="kpi-label">Objednávky k vyřízení</span>
+      <span class="kpi-value" [class.danger]="pendingOrders > 0">{{ pendingOrders }}</span>
+      <span class="kpi-sub">rezervované a čekající</span>
     </div>
   </div>
 
   <!-- Co hoří -->
   <section class="panel" [class.panel-alert]="lowStock.length > 0">
     <div class="panel-header">
-      <h3 class="panel-title">🔥 Co hoří</h3>
+      <h3 class="panel-title">
+        <svg class="icon" aria-hidden="true"><use href="#i-fire" /></svg>
+        Co hoří
+      </h3>
       <span class="badge badge-danger" *ngIf="lowStock.length > 0">{{ alertCountLabel(lowStock.length) }}</span>
       <span class="badge badge-success" *ngIf="lowStock.length === 0">Vše nad minimem</span>
     </div>
@@ -68,8 +83,10 @@
         <span class="movement-badge" [ngClass]="alert.severity === 'CRITICAL' ? 'critical' : 'warning'">
           {{ alert.severity === 'CRITICAL' ? 'Kritické' : 'Varování' }}
         </span>
-        <span class="stock-sub">doporučeno {{ alert.recommendedQuantity }} ks</span>
-        <button class="btn-row" (click)="openRestock(alert)">+ Rychle naskladnit</button>
+        <button class="btn-row" (click)="openRestock(alert)">
+          <svg class="icon icon-sm" aria-hidden="true"><use href="#i-plus" /></svg>
+          Naskladnit {{ alert.recommendedQuantity }} ks
+        </button>
       </div>
     </div>
   </section>
@@ -78,7 +95,10 @@
   <div class="revenue-grid">
     <section class="panel" *ngFor="let report of [current, previous]; let index = index">
       <div class="panel-header">
-        <h3 class="panel-title">📈 Obrat {{ index === 0 ? currentLabel : previousLabel }}</h3>
+        <h3 class="panel-title">
+          <svg class="icon" aria-hidden="true"><use href="#i-chart" /></svg>
+          Obrat {{ index === 0 ? currentLabel : previousLabel }}
+        </h3>
         <span class="badge badge-success" *ngIf="report">
           {{ report.totalRevenue | number:'1.0-0' }} Kč
         </span>
@@ -116,11 +136,13 @@
           minimum {{ restockAlert.minStockLimit }} ks
         </p>
       </div>
-      <button class="btn-close" (click)="closeRestock()">✕</button>
+      <button class="btn-close" (click)="closeRestock()" aria-label="Zavřít dialog">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#i-close" /></svg>
+      </button>
     </div>
 
     <div class="modal-error" *ngIf="restockError">
-      <span>⚠</span> {{ restockError }}
+      <svg class="icon icon-sm" aria-hidden="true"><use href="#i-alert" /></svg> {{ restockError }}
     </div>
 
     <form (ngSubmit)="submitRestock()">

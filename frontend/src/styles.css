@@ -215,42 +215,13 @@ input, textarea, select {
 .page-title {
   font-size: 2rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--text-primary);
   margin-bottom: 0.35rem;
 }
 
 .page-desc {
   color: var(--text-secondary);
   font-size: 0.95rem;
-}
-
-/* Přepínání pohledů */
-.tab-bar {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid var(--border-subtle);
-}
-
-.tab {
-  background: transparent;
-  color: var(--text-secondary);
-  padding: 0.7rem 1.1rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-}
-
-.tab:hover {
-  color: var(--text-primary);
-}
-
-.tab.active {
-  color: var(--accent-primary);
-  border-bottom-color: var(--accent-primary);
 }
 
 /* Buttons */
@@ -341,10 +312,6 @@ input, textarea, select {
   border-color: var(--border-focus);
 }
 
-.search-icon {
-  font-size: 0.95rem;
-  opacity: 0.7;
-}
 
 .search-input {
   background: transparent;
@@ -408,26 +375,10 @@ input, textarea, select {
   overflow: hidden;
 }
 
-.product-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: var(--accent-gradient);
-  opacity: 0;
-  transition: opacity 0.25s ease;
-}
-
 .product-card:hover {
   transform: translateY(-4px);
   border-color: rgba(234, 154, 62, 0.3);
   box-shadow: var(--shadow-lg), var(--shadow-glow);
-}
-
-.product-card:hover::before {
-  opacity: 1;
 }
 
 .product-card.inactive {
@@ -854,20 +805,6 @@ input, textarea, select {
   border: 1px solid var(--border-subtle);
 }
 
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(234, 154, 62, 0.2);
-  border-top-color: var(--accent-primary);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-  margin: 0 auto 1rem;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 .empty-icon {
   font-size: 3rem;
   margin-bottom: 0.85rem;
@@ -1087,4 +1024,587 @@ input, textarea, select {
   background: var(--warning-bg);
   color: var(--accent-primary);
   border-color: rgba(245, 158, 11, 0.3);
+}
+
+/* ==========================================================================
+   Refinement pass – jednotná typografie, kontrast, focus, ikony, skeleton
+   ========================================================================== */
+
+:root {
+  --bg-card: #141a24;
+  --bg-card-solid: #141a24;
+  --bg-input: #0e131c;
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --text-secondary: #a3b1c6;
+  --text-muted: #7f8ba0;
+  --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 6px 16px -6px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 18px 40px -20px rgba(0, 0, 0, 0.7);
+}
+
+::selection {
+  background: rgba(234, 154, 62, 0.35);
+  color: #fff;
+}
+
+input,
+textarea {
+  caret-color: var(--accent-primary);
+}
+
+::placeholder {
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: none;
+}
+
+.icon-sm {
+  width: 16px;
+  height: 16px;
+}
+
+.page-title {
+  background: none;
+  -webkit-text-fill-color: currentColor;
+  color: var(--text-primary);
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.page-desc {
+  max-width: 68ch;
+}
+
+/* Plochy bez dekorativního glass efektu */
+.product-card,
+.toolbar-card,
+.table-card,
+.loading-state,
+.empty-state,
+.panel,
+.metric-card {
+  background: var(--bg-card);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.product-card:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: rgba(234, 154, 62, 0.35);
+}
+
+/* Tlačítka */
+.btn {
+  min-height: 40px;
+  box-shadow: none;
+  border: 1px solid transparent;
+}
+
+.btn-primary {
+  background: var(--accent-primary);
+  color: #1b1206;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-primary-hover);
+  transform: none;
+  box-shadow: 0 8px 20px -12px rgba(234, 154, 62, 0.7);
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.btn-toggle {
+  border: 1px solid var(--border-subtle);
+}
+
+/* Formuláře */
+.form-control,
+.category-select,
+.search-input {
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.form-control:hover,
+.category-select:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.form-control:focus,
+.category-select:focus,
+.search-box:focus-within {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(234, 154, 62, 0.15);
+}
+
+/* Odznaky */
+.badge {
+  border: 1px solid transparent;
+}
+
+.badge-neutral {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-secondary);
+  border-color: var(--border-subtle);
+}
+
+.badge-success {
+  color: #34d399;
+}
+
+.badge-danger {
+  color: #f87171;
+}
+
+/* Tabulky */
+.stock-table th {
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.stock-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.stock-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.stock-table .product-code,
+.order-total,
+.movement-date,
+.stock-qty,
+.movement-change {
+  font-variant-numeric: tabular-nums;
+}
+
+/* KPI pás místo čtyř stejných karet */
+.kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.kpi {
+  padding: 1.1rem 1.35rem;
+  border-left: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.kpi:first-child {
+  border-left: none;
+}
+
+.kpi-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.kpi-value {
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.kpi-value.accent {
+  color: var(--accent-primary);
+}
+
+.kpi-value.danger {
+  color: var(--danger);
+}
+
+.kpi-sub {
+  font-size: 0.76rem;
+  color: var(--text-muted);
+}
+
+/* Řádek kritické zásoby */
+.alert-row {
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  column-gap: 1.25rem;
+}
+
+.alert-row > :first-child {
+  min-width: 0;
+}
+
+.alert-numbers {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+}
+
+/* Skeletony místo spinnerů */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm);
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  animation: shimmer 1.4s infinite;
+}
+
+.skeleton-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.skeleton-line {
+  height: 12px;
+}
+
+.skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 240px;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (max-width: 900px) {
+  .kpi-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .kpi {
+    border-left: none;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .kpi:nth-child(-n + 2) {
+    border-top: none;
+  }
+
+  .alert-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 0.5rem;
+  }
+
+  .alert-numbers {
+    align-items: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Doplňky refinementu */
+.empty-icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+  color: var(--text-muted);
+  opacity: 1;
+}
+
+.empty-icon .icon {
+  width: 32px;
+  height: 32px;
+  stroke-width: 1.5;
+}
+
+.empty-state a {
+  color: var(--accent-primary);
+  text-underline-offset: 3px;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.panel-title .icon {
+  color: var(--accent-primary);
+  width: 20px;
+  height: 20px;
+}
+
+.revenue-amount {
+  font-variant-numeric: tabular-nums;
+}
+
+.btn-row,
+.badge,
+.order-status,
+.movement-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.btn {
+  gap: 0.5rem;
+}
+
+.btn-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+}
+
+.search-box .icon {
+  color: var(--text-muted);
+}
+
+.search-input:focus-visible {
+  outline: none;
+}
+
+.modal-title {
+  font-size: 1.25rem;
+}
+
+/* Desková tabulka: užší buňky, aby se vešla i akční lišta */
+.stock-table th,
+.stock-table td {
+  padding: 0.9rem 1rem;
+}
+
+.row-actions {
+  flex-wrap: nowrap;
+}
+
+.btn-row {
+  padding: 0.32rem 0.55rem;
+  gap: 0.3rem;
+}
+
+@media (max-width: 1024px) {
+  .table-cards .table-wrap {
+    overflow: visible;
+  }
+
+  .table-cards table,
+  .table-cards thead,
+  .table-cards tbody,
+  .table-cards tr,
+  .table-cards td {
+    display: block;
+    width: 100%;
+  }
+
+  .table-cards thead {
+    display: none;
+  }
+
+  .table-cards tbody {
+    display: grid;
+    gap: 0.75rem;
+    padding: 0.75rem;
+  }
+
+  .table-cards tr {
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.02);
+    overflow: hidden;
+  }
+
+  .table-cards td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 0.55rem 0.85rem;
+    border: none;
+    white-space: normal;
+    text-align: left;
+  }
+
+  .table-cards td + td {
+    border-top: 1px dashed rgba(255, 255, 255, 0.07);
+  }
+
+  .table-cards td::before {
+    content: attr(data-label);
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+    padding-top: 0.15rem;
+    flex: none;
+  }
+
+  .table-cards td[data-label='']::before {
+    display: none;
+  }
+
+  .table-cards td[data-label=''] {
+    justify-content: flex-start;
+  }
+
+  .table-cards td .row-actions {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .table-cards td.num {
+    text-align: left;
+  }
+
+  .table-cards .movement-reason {
+    max-width: none;
+    display: block;
+  }
+
+  .table-cards .movement-reason::before {
+    display: block;
+    margin-bottom: 0.2rem;
+  }
+
+  .table-cards .inventory-input {
+    width: 110px;
+  }
+
+  .alert-row .movement-badge {
+    justify-self: start;
+  }
+
+  .alert-row button {
+    justify-self: end;
+  }
+}
+
+/* Responzivní toolbar a filtry */
+.search-box {
+  min-width: 0;
+  flex: 1 1 260px;
+}
+
+.filter-actions {
+  flex-wrap: wrap;
+}
+
+.category-select {
+  max-width: 100%;
+}
+
+@media (max-width: 760px) {
+  .toolbar-card {
+    padding: 0.85rem 1rem;
+  }
+
+  .search-box {
+    flex: 1 1 100%;
+  }
+
+  .filter-actions {
+    width: 100%;
+  }
+
+  .filter-actions > * {
+    flex: 1 1 100%;
+  }
+
+  .page-header .filter-actions > * {
+    flex: 0 1 auto;
+  }
+}
+
+/* Formuláře v dialozích: žádné přetékání */
+.form-group {
+  min-width: 0;
+}
+
+.form-row > .form-group:not(.flex-1):not(.flex-2) {
+  flex: 1 1 0;
+}
+
+.form-control,
+textarea.form-control {
+  width: 100%;
+}
+
+.modal-dialog {
+  max-width: min(600px, calc(100vw - 2rem));
+}
+
+.modal-wide {
+  max-width: min(820px, calc(100vw - 2rem));
+}
+
+.order-item-row {
+  min-width: 0;
+}
+
+.order-item-row > * {
+  min-width: 0;
+}
+
+.order-item-row .form-control,
+.order-item-row select,
+.order-item-row .order-qty {
+  width: 100%;
 }

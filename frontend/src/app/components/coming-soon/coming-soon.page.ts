@@ -14,7 +14,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
     </section>
 
     <div class="empty-state">
-      <div class="empty-icon">🚧</div>
+      <div class="empty-icon"><svg class="icon" aria-hidden="true"><use href="#i-alert" /></svg></div>
       <h3>Tato obrazovka se připravuje</h3>
       <p>{{ note }}</p>
       <p class="form-hint">Zatím můžeš pracovat s <a routerLink="/produkty">katalogem produktů</a> a <a routerLink="/zasoby">zásobami po skladech</a>.</p>
