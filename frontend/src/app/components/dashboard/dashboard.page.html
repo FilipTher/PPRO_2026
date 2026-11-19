@@ -1,0 +1,169 @@
+<section class="page-header">
+  <div>
+    <h2 class="page-title">Dashboard</h2>
+    <p class="page-desc">Co hoří, kolik máme na skladech a co nás živí.</p>
+  </div>
+
+  <button class="btn btn-ghost" (click)="load()">↻ Obnovit</button>
+</section>
+
+<div class="toast-alert toast-success" *ngIf="successMessage">
+  <span>✓</span> {{ successMessage }}
+</div>
+
+<div class="toast-alert toast-danger" *ngIf="errorMessage">
+  <span>⚠</span> {{ errorMessage }}
+</div>
+
+<div class="loading-state" *ngIf="isLoading">
+  <div class="spinner"></div>
+  <p>Načítám přehled firmy...</p>
+</div>
+
+<ng-container *ngIf="!isLoading">
+  <!-- Metriky skladu -->
+  <div class="metric-grid">
+    <div class="metric-card">
+      <span class="metric-label">Hodnota skladu (nákupní)</span>
+      <span class="metric-value">{{ purchaseValue | number:'1.0-0' }} Kč</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Hodnota skladu (prodejní)</span>
+      <span class="metric-value accent">{{ sellingValue | number:'1.0-0' }} Kč</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Kusy na skladech</span>
+      <span class="metric-value">{{ piecesHk + piecesTrb }} ks</span>
+      <span class="metric-sub">Hradec {{ piecesHk }} · garáž {{ piecesTrb }}</span>
+    </div>
+    <div class="metric-card">
+      <span class="metric-label">Objednávky k vyřízení</span>
+      <span class="metric-value" [class.danger]="pendingOrders > 0">{{ pendingOrders }}</span>
+      <span class="metric-sub">rezervované + čekající</span>
+    </div>
+  </div>
+
+  <!-- Co hoří -->
+  <section class="panel" [class.panel-alert]="lowStock.length > 0">
+    <div class="panel-header">
+      <h3 class="panel-title">🔥 Co hoří</h3>
+      <span class="badge badge-danger" *ngIf="lowStock.length > 0">{{ alertCountLabel(lowStock.length) }}</span>
+      <span class="badge badge-success" *ngIf="lowStock.length === 0">Vše nad minimem</span>
+    </div>
+
+    <p class="panel-empty" *ngIf="lowStock.length === 0">
+      Žádná hračka není na minimu ani pod ním. Sklad je v pořádku.
+    </p>
+
+    <div class="alert-list" *ngIf="lowStock.length > 0">
+      <div class="alert-row" *ngFor="let alert of lowStock">
+        <div>
+          <span class="product-code">{{ alert.productCode }}</span>
+          <div class="stock-name">{{ alert.productName }}</div>
+        </div>
+        <div class="alert-numbers">
+          <span class="movement-change negative">{{ alert.totalPhysicalQuantity }} ks</span>
+          <span class="stock-sub">minimum {{ alert.minStockLimit }} ks</span>
+        </div>
+        <span class="movement-badge" [ngClass]="alert.severity === 'CRITICAL' ? 'critical' : 'warning'">
+          {{ alert.severity === 'CRITICAL' ? 'Kritické' : 'Varování' }}
+        </span>
+        <span class="stock-sub">doporučeno {{ alert.recommendedQuantity }} ks</span>
+        <button class="btn-row" (click)="openRestock(alert)">+ Rychle naskladnit</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Obrat po kategoriích -->
+  <div class="revenue-grid">
+    <section class="panel" *ngFor="let report of [current, previous]; let index = index">
+      <div class="panel-header">
+        <h3 class="panel-title">📈 Obrat {{ index === 0 ? currentLabel : previousLabel }}</h3>
+        <span class="badge badge-success" *ngIf="report">
+          {{ report.totalRevenue | number:'1.0-0' }} Kč
+        </span>
+      </div>
+
+      <p class="panel-empty" *ngIf="report && report.categories.length === 0">
+        Za tento měsíc zatím nejsou expedované žádné objednávky.
+      </p>
+
+      <div class="revenue-list" *ngIf="report && report.categories.length > 0">
+        <div class="revenue-row" *ngFor="let category of report.categories">
+          <div class="revenue-head">
+            <span>{{ category.categoryName }}</span>
+            <span class="revenue-amount">
+              {{ category.revenue | number:'1.0-0' }} Kč · {{ category.revenueSharePercent }} %
+            </span>
+          </div>
+          <div class="revenue-bar">
+            <div class="revenue-bar-fill" [style.width]="barWidth(category.revenueSharePercent)"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</ng-container>
+
+<!-- Dialog: rychlé naskladnění -->
+<div class="modal-backdrop" *ngIf="restockAlert" (click)="closeRestock()">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <h3 class="modal-title">Rychle naskladnit: {{ restockAlert.productName }}</h3>
+        <p class="modal-subtitle">
+          {{ restockAlert.productCode }} · na skladech {{ restockAlert.totalPhysicalQuantity }} ks,
+          minimum {{ restockAlert.minStockLimit }} ks
+        </p>
+      </div>
+      <button class="btn-close" (click)="closeRestock()">✕</button>
+    </div>
+
+    <div class="modal-error" *ngIf="restockError">
+      <span>⚠</span> {{ restockError }}
+    </div>
+
+    <form (ngSubmit)="submitRestock()">
+      <div class="form-group">
+        <label for="restock-warehouse">Sklad *</label>
+        <select id="restock-warehouse" class="form-control" [(ngModel)]="restockWarehouseId" name="warehouse">
+          <option *ngFor="let wh of warehouses" [ngValue]="wh.id">{{ wh.name }}</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="restock-quantity">Počet kusů *</label>
+        <input
+          id="restock-quantity"
+          type="number"
+          min="1"
+          step="1"
+          class="form-control"
+          [(ngModel)]="restockQuantity"
+          name="quantity"
+          required
+        />
+        <small class="form-hint">Předvyplněno doporučené množství k doplnění minima.</small>
+      </div>
+
+      <div class="form-group">
+        <label for="restock-note">Poznámka</label>
+        <input
+          id="restock-note"
+          type="text"
+          class="form-control"
+          placeholder="např. objednáno u truhláře"
+          [(ngModel)]="restockNote"
+          name="note"
+        />
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" (click)="closeRestock()">Zrušit</button>
+        <button type="submit" class="btn btn-primary" [disabled]="isRestocking">
+          {{ isRestocking ? 'Naskladňuji...' : 'Naskladnit' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

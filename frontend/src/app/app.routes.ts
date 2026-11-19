@@ -4,18 +4,12 @@ import { StockPage } from './components/stock/stock.page';
 import { InventoryPage } from './components/stock/inventory.page';
 import { MovementsPage } from './components/stock/movements.page';
 import { OrdersPage } from './components/orders/orders.page';
+import { DashboardPage } from './components/dashboard/dashboard.page';
 import { ComingSoonPage } from './components/coming-soon/coming-soon.page';
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'produkty' },
-  {
-    path: 'dashboard',
-    component: ComingSoonPage,
-    data: {
-      title: 'Dashboard',
-      note: 'Přehled „co hoří“ a měsíční obrat po kategoriích přinese Krok 4.6.'
-    }
-  },
+  { path: 'dashboard', component: DashboardPage },
   { path: 'produkty', component: ProductsPage },
   { path: 'zasoby', component: StockPage },
   { path: 'inventura', component: InventoryPage },
