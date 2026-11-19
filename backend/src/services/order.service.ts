@@ -7,6 +7,7 @@ import {
   CreateOrderItemDto,
   CreateOrderItemInputDto,
   CreateCustomerDto,
+  OrderFilterDto,
   OrderWithRelations
 } from '../types/order.types';
 import { DomainValidationError, NotFoundError } from '../errors';
@@ -20,6 +21,18 @@ export class OrderService {
     private readonly productRepository: IProductRepository,
     private readonly stockRepository: IStockRepository
   ) {}
+
+  async getOrders(filters?: OrderFilterDto): Promise<OrderWithRelations[]> {
+    return this.orderRepository.findAllOrders(filters);
+  }
+
+  async getOrderById(id: number): Promise<OrderWithRelations> {
+    const order = await this.orderRepository.findOrderById(id);
+    if (!order) {
+      throw new NotFoundError(`Objednávka s ID ${id} nebyla nalezena.`);
+    }
+    return order;
+  }
 
   /**
    * Založí objednávku s okamžitou rezervací zásob.

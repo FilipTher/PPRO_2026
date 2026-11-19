@@ -6,6 +6,14 @@ import { Customer, Order, OrderItem, Product, Warehouse } from '@prisma/client';
  */
 export type OrderStatus = 'PENDING' | 'RESERVED' | 'SHIPPED' | 'REJECTED' | 'CANCELLED';
 
+export const ORDER_STATUSES: OrderStatus[] = [
+  'PENDING',
+  'RESERVED',
+  'SHIPPED',
+  'REJECTED',
+  'CANCELLED'
+];
+
 export interface CreateCustomerDto {
   name: string;
   email: string;

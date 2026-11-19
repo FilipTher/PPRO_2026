@@ -3,6 +3,7 @@ import cors from 'cors';
 import { createProductRouter } from './routes/product.routes';
 import { createCategoryRouter } from './routes/category.routes';
 import { createStockRouter } from './routes/stock.routes';
+import { createOrderRouter } from './routes/order.routes';
 
 export function createApp() {
   const app = express();
@@ -23,6 +24,9 @@ export function createApp() {
 
   // API modul skladových zásob
   app.use('/api/stock', createStockRouter());
+
+  // API modul objednávek
+  app.use('/api/orders', createOrderRouter());
 
   return app;
 }
