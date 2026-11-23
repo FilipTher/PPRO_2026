@@ -58,6 +58,9 @@ export class OrdersPage implements OnInit {
   isCreateOpen = false;
   customerMode: 'existing' | 'new' = 'existing';
   selectedCustomerId: number | null = null;
+  customerSearch = '';
+  isCustomerListOpen = false;
+  highlightedCustomerIndex = -1;
   newCustomer: CreateCustomerDto = { ...emptyCustomer };
   itemRows: OrderItemRow[] = [];
   createError: string | null = null;
@@ -180,7 +183,10 @@ export class OrdersPage implements OnInit {
 
   openCreate(): void {
     this.customerMode = this.customers.length > 0 ? 'existing' : 'new';
-    this.selectedCustomerId = this.customers[0]?.id ?? null;
+    this.selectedCustomerId = null;
+    this.customerSearch = '';
+    this.isCustomerListOpen = false;
+    this.highlightedCustomerIndex = -1;
     this.newCustomer = { ...emptyCustomer };
     this.itemRows = [];
     this.addItemRow();
@@ -199,6 +205,78 @@ export class OrdersPage implements OnInit {
       warehouseId: this.warehouses[0]?.id ?? null,
       quantity: 1
     });
+  }
+
+  /** Našeptávač zákazníka: filtruje podle jména, e-mailu nebo telefonu. */
+  get filteredCustomers(): Customer[] {
+    const query = this.customerSearch.trim().toLowerCase();
+    const isPickedLabel = this.customers.some(
+      (customer) => this.customerLabel(customer).toLowerCase() === query
+    );
+    const matched =
+      !query || isPickedLabel
+        ? this.customers
+        : this.customers.filter((customer) =>
+            [customer.name, customer.email, customer.phone].join(' ').toLowerCase().includes(query)
+          );
+
+    return matched.slice(0, 8);
+  }
+
+  private customerLabel(customer: Customer): string {
+    return `${customer.name} (${customer.email})`;
+  }
+
+  onCustomerSearch(value: string): void {
+    this.customerSearch = value;
+    this.selectedCustomerId = null;
+    this.isCustomerListOpen = true;
+    this.highlightedCustomerIndex = this.filteredCustomers.length > 0 ? 0 : -1;
+  }
+
+  onCustomerFocus(): void {
+    this.isCustomerListOpen = true;
+    const selectedIndex = this.filteredCustomers.findIndex((c) => c.id === this.selectedCustomerId);
+    this.highlightedCustomerIndex =
+      selectedIndex >= 0 ? selectedIndex : this.filteredCustomers.length > 0 ? 0 : -1;
+  }
+
+  selectCustomer(customer: Customer): void {
+    this.selectedCustomerId = customer.id;
+    this.customerSearch = this.customerLabel(customer);
+    this.isCustomerListOpen = false;
+    this.highlightedCustomerIndex = -1;
+  }
+
+  onCustomerKeydown(event: KeyboardEvent): void {
+    const options = this.filteredCustomers;
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.isCustomerListOpen = true;
+      this.highlightedCustomerIndex =
+        options.length > 0 ? Math.min(this.highlightedCustomerIndex + 1, options.length - 1) : -1;
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.highlightedCustomerIndex = Math.max(this.highlightedCustomerIndex - 1, 0);
+    } else if (event.key === 'Enter' && this.isCustomerListOpen) {
+      const customer = options[this.highlightedCustomerIndex];
+      if (customer) {
+        event.preventDefault();
+        this.selectCustomer(customer);
+      }
+    } else if (event.key === 'Escape') {
+      this.isCustomerListOpen = false;
+      this.highlightedCustomerIndex = -1;
+    }
+  }
+
+  onCustomerBlur(event: FocusEvent): void {
+    const next = event.relatedTarget as Node | null;
+    const container = event.currentTarget as HTMLElement;
+    if (!next || !container.contains(next)) {
+      this.isCustomerListOpen = false;
+    }
   }
 
   removeItemRow(index: number): void {

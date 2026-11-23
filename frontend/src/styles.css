@@ -1232,6 +1232,66 @@ textarea {
   flex-wrap: wrap;
 }
 
+/* Combobox: našeptávač zákazníka */
+.combobox {
+  position: relative;
+}
+
+.combobox-list {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  margin: 0;
+  padding: 0.2rem 0;
+  list-style: none;
+  background: var(--bg-input);
+  border: 1px solid var(--rule-strong);
+  border-radius: 2px;
+  box-shadow: 0 8px 20px rgba(32, 34, 29, 0.16);
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.combobox-option {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.35rem 0.55rem;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+}
+
+.combobox-option.active {
+  background: var(--sheet-2);
+  border-left-color: var(--ink);
+}
+
+.combobox-option.selected .combobox-name {
+  font-weight: 600;
+}
+
+.combobox-name {
+  font-size: 0.8rem;
+  color: var(--ink);
+}
+
+.combobox-meta {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.combobox-empty {
+  padding: 0.45rem 0.55rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
 /* Orders */
 .order-item-row {
   display: grid;

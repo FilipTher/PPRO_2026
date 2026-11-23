@@ -167,10 +167,22 @@ describe('OrdersPage (objednávky)', () => {
     expect(page.createBlocked()).toBe(true);
   });
 
+  it('měl by filtrovat zákazníky podle hledaného textu', () => {
+    const { page } = createPage();
+
+    page.openCreate();
+    page.onCustomerSearch('jana@');
+    expect(page.filteredCustomers.map((c) => c.id)).toEqual([1]);
+
+    page.onCustomerSearch('neexistuje');
+    expect(page.filteredCustomers).toHaveLength(0);
+  });
+
   it('měl by odeslat objednávku s vybraným zákazníkem a položkami', () => {
     const { page } = createPage();
 
     page.openCreate();
+    page.selectCustomer(customer);
     page.itemRows[0].quantity = 2;
     expect(page.createBlocked()).toBe(false);
 

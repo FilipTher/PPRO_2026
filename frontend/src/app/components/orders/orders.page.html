@@ -134,11 +134,50 @@
 
       <div class="form-group" *ngIf="customerMode === 'existing'">
         <label for="order-customer">Vyberte zákazníka *</label>
-        <select id="order-customer" class="form-control" [(ngModel)]="selectedCustomerId" name="customer">
-          <option *ngFor="let customer of customers" [ngValue]="customer.id">
-            {{ customer.name }} ({{ customer.email }})
-          </option>
-        </select>
+        <div class="combobox" (focusout)="onCustomerBlur($event)">
+          <input
+            id="order-customer"
+            type="text"
+            class="form-control"
+            name="customer"
+            placeholder="Pište jméno, e-mail nebo telefon…"
+            autocomplete="off"
+            role="combobox"
+            aria-controls="order-customer-list"
+            [attr.aria-expanded]="isCustomerListOpen"
+            [attr.aria-activedescendant]="
+              highlightedCustomerIndex >= 0 ? 'order-customer-opt-' + highlightedCustomerIndex : null
+            "
+            [ngModel]="customerSearch"
+            (ngModelChange)="onCustomerSearch($event)"
+            (focus)="onCustomerFocus()"
+            (keydown)="onCustomerKeydown($event)"
+          />
+          <ul
+            id="order-customer-list"
+            class="combobox-list"
+            role="listbox"
+            *ngIf="isCustomerListOpen && filteredCustomers.length > 0"
+          >
+            <li
+              *ngFor="let customer of filteredCustomers; let i = index"
+              [id]="'order-customer-opt-' + i"
+              class="combobox-option"
+              [class.active]="i === highlightedCustomerIndex"
+              [class.selected]="customer.id === selectedCustomerId"
+              role="option"
+              [attr.aria-selected]="customer.id === selectedCustomerId"
+              (mousedown)="$event.preventDefault()"
+              (click)="selectCustomer(customer)"
+            >
+              <span class="combobox-name">{{ customer.name }}</span>
+              <span class="combobox-meta">{{ customer.email }}</span>
+            </li>
+          </ul>
+          <div class="combobox-list combobox-empty" *ngIf="isCustomerListOpen && filteredCustomers.length === 0">
+            Žádný zákazník neodpovídá hledání.
+          </div>
+        </div>
         <small class="form-hint" *ngIf="customers.length === 0">
           Zatím není žádný zákazník – zadejte nového.
         </small>
