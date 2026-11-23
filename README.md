@@ -1,281 +1,266 @@
-# Semestrální projekt PPRO (2026/2027)
+# Skladový systém Dřevěnka (PPRO 2026/2027, Zadání B)
 
-> **DŮLEŽITÉ PRO AI ASISTENTA**: Tento soubor je primárním zdrojem pravdy o architektuře, pravidlech a rozhodnutích projektu. Před jakýmkoli zásahem do kódu je povinné si tento soubor projít, aby nedošlo ke ztrátě kontextu.
+Semestrální projekt do PPRO. Je to skladový systém pro malý e-shop s dřevěnými hračkami. Řeší hlavně to, aby se neprodalo zboží, které fyzicky není na skladě, a aby se dal dohledat každý pohyb zásob.
 
----
+Aplikace se skládá z Angular frontendu, Express API a SQLite databáze. Celé to jde pustit jedním příkazem:
 
-## 1. Absolutní pravidla aplikace (Dogmata)
-
-Těmito pravidly se projekt striktně řídí a nesmí být porušena za žádných okolností:
-
-1. **Třívrstvá architektura se závislostmi jedním směrem**:
-   - **Prezentační vrstva (UI / API)** závisí na aplikační/doménové vrstvě, nikoli naopak.
-   - **Doménová / Aplikační vrstva** obsahuje čistá obchodní pravidla a nesmí být závislá na konkrétním frameworku UI nebo konkrétním driveru databáze.
-   - **Datová / Infrastrukturní vrstva** realizuje perzistenci a externí služby. Závislosti tečou striktně jedním směrem (inverze závislostí).
-2. **Vynucení obchodních pravidel v jádře aplikace**:
-   - Žádné pravidlo nesmí spoléhat na „slušnost“ nebo pozornost uživatele ani pouze na validaci ve webovém formuláři.
-   - Pravidla (např. zákaz překryvu termínů, výdej nad stav skladu, překročení kapacity) musí být garantována doménovou logikou a databázovými integritními omezeními (unikátní indexy, transakce, constrainty).
-3. **Relační databáze s verzovanými migracemi**:
-   - Databáze běží v kontejneru v Dockeru.
-   - Veškeré změny schématu jsou řízeny výhradně verzovanými migračními skripty, nikdy manuálními úpravami v DB nástrojích.
-4. **Rozsah datového modelu**:
-   - Minimálně 5 plnohodnotných doménových entit.
-   - Minimálně jedna vazba M:N (many-to-many).
-5. **Jednoduchá a reprodukovatelná spustitelnost**:
-   - Kompletní prostředí (databáze, backend, frontend) musí jít spustit z kořene projektu příkazem:
-     ```bash
-     docker compose up
-     ```
-6. **Automatizované testování**:
-   - Každé klíčové obchodní pravidlo musí být pokryto unit testy.
-   - Kritické toky musí být ověřeny integračními testy.
-7. **Bezpečnost a syntetická data**:
-   - Žádná reálná data, osobní údaje reálných osob ani přístupová tajemství (hesla, tokeny) nesmí být nahrána do repozitáře.
-   - Konfigurace se načítá z proměnných prostředí (`.env`, vzor v `.env.example`).
-
----
-
-## 2. Vybrané zadání: Zadání B – Sklad pro malý e-shop
-
-- **Klient**: Petr Doležal, Dřevěnka s.r.o.
-- **Doména**: Výroba a prodej dřevěných hraček, ~400 položek v nabídce, růst tržeb, 2 fyzické sklady (centrála Hradec Králové, sezónní garáž Třebechovice pod Orebem).
-- **Cíl systému**: Nahradit nepřehledný sdílený Excel a ruční přepisování objednávek z e-shopu specializovaným skladovým systémem, který zabrání prodeji nedostupného zboží a zajistí stoprocentní auditovatelnost skladových zásob a pohybů.
-- **Kde se návrh láme**: Okamžik odečtení zásoby (disponibilní vs. fyzická zásoba) a nezpochybnitelná dohledatelnost každého pohybu (zákaz záporných stavů, audit log).
-
----
-
-## 3. Technická dokumentace a architektura
-
-### Použitý technologický stack:
-- **Backend**: Node.js (TypeScript, Express) – REST API (třívrstvá architektura: Controllers → Services/Domain → Repositories)
-- **Frontend**: Angular 22 (standalone komponenty, zoneless) – responzivní SPA pro desktop i skladový mobil/tablet
-- **Databáze**: SQLite přes Prisma ORM, verzované migrace
-- **Testy**: Jest + Supertest (backend), Vitest (frontend)
-- **Kontejnerizace & Orchestrace**: Docker Compose (`docker compose up --build`), Nginx pro SPA a proxy
-
-### Struktura vrstev a komponent:
-```text
-[ Angular Frontend (SPA) ]
-          │  HTTP / REST API
-          ▼
-[ API / Controllers (Prezentační vrstva) ]
-          │  DTOs, validace vstupů, mapování chyb na HTTP kódy
-          ▼
-[ Aplikační & Doménová logika (Services, Business Rules) ]
-          │  Inverze závislostí (rozhraní repozitářů)
-          ▼
-[ Perzistence & Infrastruktura (Prisma repozitáře, migrace, SQLite) ]
-```
-
-### Realizovaná struktura projektu:
-```text
-backend/src/
-  controllers/   product, category, stock, order, customer, report
-  services/      product, category, stock, order, customer, report
-  repositories/  product, category, stock, order, customer, report
-  routes/        registrace endpointů, napojení do app.ts
-  types/         DTO a filtry (product, stock, order, report)
-  errors/        DomainValidationError, NotFoundError, ConflictError
-frontend/src/app/
-  components/    layout (navbar), products, stock (+inventura, pohyby),
-                 orders, dashboard, coming-soon
-  services/      product, category, stock, order, customer, report
-  models/        product, stock, order, report
-  app.routes.ts  routing celé SPA
-backend/src/domain/
-  models.ts      čisté doménové typy (bez závislosti na Prisma/DB driveru)
-```
-
-### Datový model (Navržené entity pro Zadání B):
-1. **Product** (id, code, name, description, purchasePrice, sellingPrice, minStockLimit, isVariantOfId)
-2. **Category** (id, name, description)
-3. **ProductCategory** (productId, categoryId) – *vazba M:N*
-4. **Warehouse** (id, name, code, address, isSeasonal) – *Hradec Králové, Garáž Třebechovice*
-5. **WarehouseStock** (id, warehouseId, productId, physicalQuantity, reservedQuantity) – *aktuální stav a rezervace*
-6. **Customer** (id, name, email, phone, street, city, zip) – *zákazník se nikdy nemaže*
-7. **Order** (id, customerId, orderNumber, status [PENDING, RESERVED, SHIPPED, REJECTED, CANCELLED], createdAt, shippedAt)
-8. **OrderItem** (id, orderId, productId, warehouseId, quantity, unitPrice) – *zafixovaná cena v okamžiku prodeje*
-9. **StockMovement** (id, productId, warehouseId, orderId, movementType [RECEIPT, DISPATCH, TRANSFER_IN, TRANSFER_OUT, INVENTORY_ADJUSTMENT], quantityChange, quantityAfter, reason, note, createdAt) – *auditní stopa pro dohledatelnost každého kusu*
-
----
-
-## 4. Seznam rozhodnutí (Architecture Decision Log)
-
-Tato sekce zaznamenává klíčová architektonická rozhodnutí a řešení otevřených bodů ze zadání.
-Stavy: **Schváleno** = odsouhlaseno na začátku, **Implementováno** = rozhodnutí je v kódu a pokryté testy, **K odsouhlasení** = čeká na klienta.
-
-| ID | Téma / Otevřený bod | Přijaté rozhodnutí a odůvodnění | Stav |
-|---|---|---|---|
-| ADR-001 | Správa repozitáře a zásady AI | AI agent nesmí provádět `git push` bez souhlasu; striktní dodržování tří vrstev a testů. Pravidla uložena v [AGENTS.md](file:///D:/Škola/PPRO/PPRO_2026/AGENTS.md). | Schváleno |
-| ADR-002 | Výběr zadání | Vybráno Zadání B (Sklad pro malý e-shop – Dřevěnka s.r.o.). | Schváleno |
-| ADR-003 | Objednávka ze dvou skladů naráz (Bod 1) | Objednávka může mít položky z různých skladů – `OrderItem.warehouseId` určuje, odkud se expeduje. Expedice odepíše z každého skladu zvlášť a zapíše vlastní `DISPATCH` pohyb. | Implementováno |
-| ADR-004 | Co znamená „dost zásob“ (Bod 2) | Rozlišujeme **fyzický** a **disponibilní** stav (`disponibilní = fyzický − rezervovaný`). Při přijetí objednávky se zásoba okamžitě **rezervuje** (`reservedQuantity +=`), takže se stejný kus neprodá dvakrát. K fyzickému odpisu a pohybu `DISPATCH` dochází až při expedici. | Implementováno |
-| ADR-005 | Záporný stav a inventura (Bod 3) | Záporný stav garantuje databáze: migrace `20261119120100` přidává `CHECK` na `WarehouseStock` (`physicalQuantity >= 0`, `reservedQuantity >= 0`, `reservedQuantity <= physicalQuantity`). Doména navíc kontroluje volné kusy u přesunu/expedice a u inventury odmítne stav nižší než rezervované množství. Nesoulad v garáži řeší **Inventura**, která zapíše `INVENTORY_ADJUSTMENT` s povinným důvodem (bez rozdílu se nezapisuje). | Implementováno |
-| ADR-006 | Varianty produktu (Bod 4) | Varianty (3 barvy téže káči) jsou samostatné produkty s vlastním kódem a zásobou, propojené volitelnou vazbou `isVariantOfId` na nadřazený produkt. | Implementováno |
-| ADR-007 | Změna objednávky po zaplacení (Bod 5) | Editace položek je povolena jen do expedice (`RESERVED`); expedovanou ani stornovanou objednávku měnit nelze. Editace v jedné transakci uvolní staré rezervace, znovu ověří disponibilitu a založí nové (ADR-003). Storno ukládá povinný důvod do `Order.cancelReason` kvůli dohledatelnosti. | Implementováno |
-| ADR-008 | Vertikální řez pro demo (Produkt) | První řez byl realizován entitou `Product` (Prisma SQLite → repozitář → doménová služba s validacemi → Express REST API → Angular SPA). Na něj navázaly další vertikální řezy (sklad, objednávky, reporty). | Schváleno |
-| ADR-009 | Change detection ve frontendu (Angular 22 = zoneless) | Angular 22 běží bez `zone.js`, takže asynchronní callbacky (HTTP odpovědi, `setTimeout`) samy nespustí překreslení. Každá komponenta, která v async callbacku mění stav, volá `ChangeDetectorRef.markForCheck()`; jinak UI zůstane viset ve stavu před odpovědí. | Schváleno |
-| ADR-010 | Produkty a kategorie (požadavek 1) | Produkt patří do více kategorií naráz – vazba M:N (`ProductCategory`) je vystavena v API (`GET /api/categories`, `categoryIds` při vytvoření produktu, filtr `GET /api/products?categoryId=`) i v UI (filtr, štítky na kartě, zaškrtávací výběr v dialogu). Kategorie se pouze čtou, zakládají se seedem – klient jejich správu nepožaduje. | Implementováno |
-| ADR-011 | Zásoby po skladech (požadavek 2) | `GET /api/stock/overview` vrací pro každý aktivní produkt fyzický, rezervovaný a disponibilní stav po skladech a flag `isLowStock`. UI má samostatnou routu `/zasoby` s tabulkou produkt × sklad a akcemi příjmu a přesunu (Kroky 4.1–4.2). | Implementováno |
-| ADR-012 | Měsíční obrat po kategoriích (požadavek 8) | Do obratu vstupují výhradně expedované objednávky (`SHIPPED`), měsíc určuje datum expedice (`shippedAt`) a cena je zafixovaná v `OrderItem.unitPrice`. Produkt ve více kategoriích se započítá plnou tržbou do každé z nich, proto se součet podílů může překrývat (nad 100 %); celkové tržby firmy se počítají z položek, ne součtem kategorií. | Implementováno |
-| ADR-013 | Alerty kritických zásob (požadavek 7) | Alert se vyhodnocuje z celkové fyzické zásoby napříč sklady (`fyzicky <= minStockLimit`), závažnost `CRITICAL` při nule, jinak `WARNING`. Doporučené množství k doobjednání je `max(minimum − fyzický stav, 1)` – doplní stav na minimum a na přesném minimu doporučí alespoň 1 kus. | Implementováno |
-
----
-
-## 5. Příručka pro spuštění a vývoj
-
-### Požadavky:
-- Node.js (v20+) a npm
-- Docker & Docker Compose (pro spuštění celé aplikace jediným příkazem)
-
-### 1. Spuštění v Dockeru (jediným příkazem):
 ```bash
 docker compose up --build
 ```
-- Aplikace (Angular UI): `http://localhost:4200`
-- REST API (Backend): `http://localhost:3100/api/products`
 
-Co se při startu stane automaticky:
-- backend kontejner spustí `prisma migrate deploy` (aplikace migrací na prázdnou DB), seed s ukázkovými daty a poté server;
-- backend má healthcheck na `/api/health` a frontend se spustí až po jeho ozdravení (`depends_on: service_healthy`), takže UI nenaběhne dřív než API;
-- SQLite databáze je v pojmenovaném volume `drevenka_sqlite_data` (`/app/data`), takže data přežijí restart kontejneru;
-- Nginx ve frontend kontejneru servíruje Angular SPA a přesměrovává `/api/*` na `backend:3000`.
+- UI: http://localhost:4200
+- API: http://localhost:3100/api/products
 
-Reset do čistého stavu (smaže i data): `docker compose down -v` a znovu `docker compose up --build`.
-Hostitelské porty lze změnit v [docker-compose.yml](file:///D:/Škola/PPRO/PPRO_2026/docker-compose.yml) (`3100:3000`, `4200:80`).
+---
 
-> Docker nikdy nepoužíval? Podrobný postup od instalace, vysvětlení image/kontejner/volume a řešení častých problémů je v [docs/DOCKER.md](file:///D:/Škola/PPRO/PPRO_2026/docs/DOCKER.md).
+## 1. Spuštění
 
-### 2. Spuštění lokálně během vývoje:
+### Přes Docker
 
-**Spuštění backendu:**
+`docker compose up --build` spustí databázi, backend i frontend. Při startu se toho udělá víc automaticky:
+
+- backend pustí `prisma migrate deploy`, takže se migrace aplikují na prázdnou databázi,
+- potom se spustí seed s ukázkovými daty a nakonec server,
+- backend má healthcheck na `/api/health` a frontend startuje až po něm, aby UI nenaběhlo dřív než API,
+- SQLite soubor je v Docker volume `drevenka_sqlite_data`, takže data přežijí restart kontejneru,
+- Nginx ve frontend kontejneru servíruje Angular a přesměrovává `/api/*` na backend.
+
+Reset do čistého stavu (smaže i data): `docker compose down -v` a pak znovu `docker compose up --build`.
+
+Porty jde změnit v `docker-compose.yml` (`3100:3000`, `4200:80`). Pokud Docker neznáš, je v `docs/DOCKER.md` postup od instalace a řešení častých chyb.
+
+### Lokálně při vývoji
+
+Backend:
+
 ```bash
 cd backend
 npm install
-cp .env.example .env   # Windows PowerShell: Copy-Item .env.example .env
+cp .env.example .env   # PowerShell: Copy-Item .env.example .env
 npx prisma migrate dev
 npx ts-node prisma/seed.ts
 npm run dev
 ```
-`npm install` automaticky spouští `prisma generate` (skript `postinstall`). Bez souboru `.env` Prisma i server hlásí `Environment variable not found: DATABASE_URL`.
 
-**Spuštění frontendu:**
+`npm install` sám spouští `prisma generate` (skript `postinstall`). Bez `.env` Prisma i server spadnou na `Environment variable not found: DATABASE_URL`.
+
+Frontend:
+
 ```bash
 cd frontend
 npm install
 npm start
 ```
-Frontend se spustí na `http://localhost:4200` a automaticky přesměrovává volání `/api/*` na backend port 3100.
 
-### 3. Spuštění automatizovaných testů:
+Běží na http://localhost:4200 a volání `/api/*` přesměrovává na backend na portu 3100. Když máš zároveň spuštěné kontejnery, porty 3100 a 4200 jsou obsazené – buď kontejnery zastav (`docker compose stop`), nebo lokální server pustíš na jiném portu.
+
+### Testy
+
 ```bash
-cd backend
-npm test        # 134 testů: unit (doménová pravidla) + integrační HTTP nad SQLite
+cd backend && npm test    # 134 testů
+cd frontend && npm test   # 34 testů
 ```
-```bash
-cd frontend
-npm test        # 28 testů: komponenty (katalog, zásoby, inventura, pohyby,
-                # objednávky, dashboard) a shell s routingem
-```
-Backend testy pokrývají validace produktů a kategorií, příjem/přesun/inventuru, rezervace, expedici, storno, editaci položek, měsíční obrat a alerty nízkých zásob. Frontend testy ověřují validace formulářů (nedostatek zásob, povinný důvod), výpočty (marže, rozdíly, metriky) a filtry.
 
-Integrační testy pracují s vývojovou databází, takže před prvním spuštěním musí proběhnout migrace a seed (viz kroky výše). Testovací data si po sobě uklízejí.
+Backend testy pokrývají validace produktů a kategorií, příjem, přesun, inventuru, rezervace, expedici, storno, editaci položek, měsíční obrat a alerty nízkých zásob. Frontend testy kontrolují validace formulářů (nedostatek zásob, povinný důvod storna), výpočty (marže, rozdíly, metriky), filtry a nově i našeptávač zákazníka.
 
+Integrační testy jedou nad vývojovou databází, takže před prvním spuštěním musí proběhnout migrace a seed. Data si po sobě uklízejí.
 
 ---
 
-## 6. Obchodní toky (kde se návrh láme)
+## 2. Zadání
 
-Klientův problém: *„Dvakrát měsíčně se stane, že se prodá něco, co není.“* Proto jsou ve skladové kartě **dvě čísla**:
+- **Klient:** Petr Doležal, Dřevěnka s.r.o.
+- **Doména:** výroba a prodej dřevěných hraček, zhruba 400 položek, dva sklady (Hradec Králové a sezónní garáž v Třebechovicích).
+- **Problém:** firma vedla sklad ve sdíleném Excelu a objednávky z e-shopu přepisovala ručně. Dvakrát měsíčně se stalo, že prodala něco, co už na skladě nebylo.
+- **Cíl:** nahradit Excel systémem, který prodej nedostupného zboží zablokuje a u každého pohybu nechá stopu.
 
-- `physicalQuantity` – kolik kusů fyzicky leží na skladě,
+Z toho vyplynulo, co bylo v projektu nejdůležitější: rozlišit fyzický a disponibilní stav a nedovolit záporné zásoby.
+
+### Pravidla ze zadání, která jsem musel dodržet
+
+1. Třívrstvá architektura a závislosti jen jedním směrem (UI → aplikační logika → databáze).
+2. Obchodní pravidla musí být v kódu a v databázi, ne jen ve formuláři.
+3. Relační databáze v Dockeru se všemi změnami schématu přes migrace.
+4. Alespoň 5 doménových entit a jedna vazba M:N.
+5. Celý projekt spustitelný přes `docker compose up`.
+6. Automatizované testy na klíčová pravidla.
+7. Žádná reálná data ani hesla v repozitáři, jen syntetická data a `.env.example`.
+
+---
+
+## 3. Architektura
+
+### Technologie
+
+- **Backend:** Node.js, TypeScript, Express. Vrstvy Controllers → Services → Repositories.
+- **Frontend:** Angular 22, standalone komponenty, bez zone.js.
+- **Databáze:** SQLite přes Prisma ORM, migrace.
+- **Testy:** Jest + Supertest (backend), Vitest (frontend).
+- **Docker:** Docker Compose, Nginx pro SPA a proxy na API.
+
+### Vrstvy
+
+```text
+Angular SPA
+   │ HTTP / REST
+   ▼
+Controllers (validace vstupů, mapování chyb na HTTP kódy)
+   ▼
+Services / doménová logika (obchodní pravidla, rozhraní repozitářů)
+   ▼
+Repozitáře a Prisma (SQLite, migrace)
+```
+
+### Struktura projektu
+
+```text
+backend/src/
+  controllers/   product, category, stock, order, customer, report
+  services/      product, category, stock, order, customer, report
+  repositories/  product, category, stock, order, customer, report
+  routes/        registrace endpointů
+  types/         DTO a filtry
+  errors/        DomainValidationError, NotFoundError, ConflictError
+  domain/        čisté doménové typy bez závislosti na Prisma
+
+frontend/src/app/
+  components/    layout, products, stock (zásoby, inventura, pohyby),
+                 orders, dashboard, reports
+  services/      product, category, stock, order, customer, report
+  models/        product, stock, order, report
+  app.routes.ts  routing
+```
+
+### Datový model
+
+1. **Product** – kód, název, ceny, minimum zásob, volitelná vazba na nadřazený produkt (varianty).
+2. **Category** – název a popis.
+3. **ProductCategory** – vazba M:N mezi produktem a kategorií.
+4. **Warehouse** – sklad, příznak sezónnosti.
+5. **WarehouseStock** – fyzický a rezervovaný stav produktu na skladu.
+6. **Customer** – zákazník, nikdy se nemaže.
+7. **Order** – číslo, stav, datum vytvoření a expedice, důvod storna.
+8. **OrderItem** – produkt, sklad, množství a cena zafixovaná v okamžiku objednávky.
+9. **StockMovement** – auditní záznam každé změny (typ, změna, stav po změně, důvod).
+
+---
+
+## 4. Jak fungují zásoby a objednávky
+
+U každého produktu na skladu jsou dvě čísla:
+
+- `physicalQuantity` – kolik kusů tam opravdu leží,
 - `reservedQuantity` – kolik z nich je slíbeno objednávkám,
-- **disponibilní = fyzický − rezervovaný** – jen tohle smí nová objednávka použít.
+- **disponibilní = fyzický − rezervovaný**. Jen tohle číslo smí nová objednávka použít.
 
-### Vytvoření objednávky = okamžitá rezervace
+### Vytvoření objednávky
 
-```text
-POST /api/orders
-  ├─ validace zákazníka a položek (kladná celá množství, existující aktivní produkty)
-  ├─ sloučení duplicit (stejný produkt + sklad se sčítá, jinak by šlo rezervovat dvakrát)
-  ├─ ceny se zafixují z aktuálního ceníku do OrderItem.unitPrice
-  └─ JEDNA TRANSAKCE
-       ├─ volné = fyzicky − rezervováno  (kontrola i uvnitř transakce)
-       ├─ nedostatek → 400 „Nedostatek zásob: Produkt … má na skladě X ks, volných pouze Y ks.“
-       │               (nevznikne objednávka ani rezervace)
-       ├─ rezervováno += požadavek
-       └─ objednávka ve stavu RESERVED
-```
+1. Zkontroluje se zákazník a položky – množství musí být kladné celé číslo a produkt musí existovat a být aktivní.
+2. Duplicitní položky (stejný produkt a sklad) se sečtou, jinak by šlo rezervovat dvakrát.
+3. Ceny se zafixují z aktuálního ceníku do `OrderItem.unitPrice`.
+4. V jedné transakci se znovu zkontroluje disponibilní množství a přičte se rezervace.
+5. Když kusy nejsou, vrátí API chybu 400 a objednávka ani rezervace nevznikne.
 
-Fyzický stav se při objednávce **nemění** – jen se „zamkne“ kus pro zákazníka.
+Fyzický stav se při objednávce nemění, jen se kus zamkne pro zákazníka.
 
-### Expedice = fyzický odpis a auditní stopa
+### Expedice
 
-```text
-POST /api/orders/:id/ship
-  ├─ povoleno jen z RESERVED (kontrola i uvnitř transakce)
-  └─ transakce pro každou položku
-       ├─ fyzicky     -= množství
-       ├─ rezervováno -= množství
-       ├─ StockMovement: DISPATCH, quantityChange = -množství, quantityAfter, orderId
-       └─ objednávka SHIPPED + shippedAt
-```
+Expedice jde jen z objednávky ve stavu `RESERVED`. Pro každou položku se v transakci odečte fyzický i rezervovaný stav, zapíše se pohyb `DISPATCH` a objednávka se přepne na `SHIPPED` s datem expedice.
 
-### Storno a editace před expedicí
+### Storno a editace
 
-| Operace | Co udělá s rezervacemi | Co udělá s fyzickým stavem |
+| Operace | Rezervace | Fyzický stav |
 |---|---|---|
-| `POST /api/orders/:id/cancel` | uvolní rezervace (`rezervováno -=`) | nic |
-| `PUT /api/orders/:id/items` | uvolní staré a založí nové rezervace (jedna transakce) | nic |
-| `POST /api/orders/:id/ship` | uvolní rezervace | odečte kusy + `DISPATCH` |
+| Storno (`POST /api/orders/:id/cancel`) | uvolní | beze změny |
+| Editace položek (`PUT /api/orders/:id/items`) | uvolní staré a vytvoří nové | beze změny |
+| Expedice (`POST /api/orders/:id/ship`) | uvolní | odečte a zapíše `DISPATCH` |
 
-Expedovanou objednávku už nelze stornovat ani editovat (řeší se vratkou/reklamací).
+Expedovanou objednávku už nejde stornovat ani editovat, řeší se vratkou nebo reklamací.
 
 ### Přesuny a inventura
 
-- `POST /api/stock/transfer` – jen volné kusy (`fyzicky − rezervováno`), zdroj ≠ cíl, dva spárované pohyby `TRANSFER_OUT`/`TRANSFER_IN` se stejným číslem převodky.
-- `POST /api/stock/inventory` – zadání skutečně napočítaného stavu, rozdíl se zapíše jako `INVENTORY_ADJUSTMENT` s povinným důvodem; beze změny se nezapisuje nic.
-- `POST /api/stock/receipt` – navýšení fyzického stavu + pohyb `RECEIPT`.
+- Přesun bere jen volné kusy, zdroj a cíl musí být jiný sklad. Vzniknou dva spárované pohyby `TRANSFER_OUT` a `TRANSFER_IN` se stejným číslem převodky.
+- Inventura zapíše skutečně napočítaný stav. Rozdíl se uloží jako `INVENTORY_ADJUSTMENT` a musí mít důvod; když je stav stejný, nezapisuje se nic.
+- Příjem zvyšuje fyzický stav a zapisuje pohyb `RECEIPT`.
 
-**Každá změna stavu zásob** má tedy odpovídající záznam v `StockMovement` – proto jde odpovědět na otázku „proč jich je sedmnáct a ne dvacet“.
+Každá změna zásob má tedy svůj záznam v `StockMovement`, takže jde zpětně zjistit, proč je na skladě sedmnáct kusů a ne dvacet.
 
 ---
 
-## 7. REST API – přehled
+## 5. REST API
 
 | Oblast | Endpointy |
 |---|---|
 | Produkty | `GET/POST /api/products`, `GET/PUT/DELETE /api/products/:id` (filtr `search`, `isActive`, `categoryId`) |
 | Kategorie | `GET /api/categories` |
 | Zákazníci | `GET /api/customers` |
-| Sklad | `GET /api/stock/warehouses`, `GET /api/stock/overview`, `POST /api/stock/receipt`, `POST /api/stock/transfer`, `POST /api/stock/inventory`, `GET /api/stock/movements` (filtry produkt, sklad, typ, objednávka, datum) |
+| Sklad | `GET /api/stock/warehouses`, `GET /api/stock/overview`, `POST /api/stock/receipt`, `POST /api/stock/transfer`, `POST /api/stock/inventory`, `GET /api/stock/movements` |
 | Objednávky | `GET/POST /api/orders`, `GET /api/orders/:id`, `PUT /api/orders/:id/items`, `POST /api/orders/:id/ship`, `POST /api/orders/:id/cancel` |
 | Reporty | `GET /api/reports/category-turnover?year=&month=`, `GET /api/reports/low-stock` |
 | Provoz | `GET /api/health` |
 
-Chybové stavy: doménové validační chyby → **400**, nenalezené entity → **404**, duplicitní kód produktu → **409**.
+Chyby: validační chyba 400, nenalezeno 404, duplicitní kód produktu 409.
 
 ---
 
-## 8. Demo data (seed)
+## 6. Rozhodnutí
 
-Seed běží při startu backendu (a ručně přes `npx ts-node prisma/seed.ts`). Je **idempotentní** – opakované spuštění nic nezduplikuje.
+Tady jsou věci, které zadání nechávalo otevřené, a jak jsem je vyřešil.
 
-- 7 produktů včetně variant káči (`KACA-CERVENA`, `KACA-MODRA` s vazbou `isVariantOfId`),
-- 2 sklady a 3 kategorie (M:N – káča patří do dvou kategorií),
-- 3 zákazníci a 3 objednávky: `ORD-SEED-0001` k expedici (RESERVED), `ORD-SEED-0002` odeslaná (SHIPPED), `ORD-SEED-0003` stornovaná,
-- 8 auditních pohybů všech typů (příjem, expedice, inventura, přesun),
-- káča modrá 2 ks při minimu 10 a červená 9 ks → dashboard hned ukáže „Co hoří“.
-
-Pro čisté demo: `docker compose down -v` a znovu `docker compose up --build` (seed vytvoří historii s aktuálními daty).
+| ID | Téma | Rozhodnutí | Stav |
+|---|---|---|---|
+| ADR-001 | Práce s repem | AI asistent nesmí pushovat bez souhlasu, musí dodržet vrstvy a testy. Pravidla jsou v `AGENTS.md`. | Schváleno |
+| ADR-002 | Výběr zadání | Zadání B, sklad pro malý e-shop. | Schváleno |
+| ADR-003 | Objednávka ze dvou skladů | `OrderItem.warehouseId` určí, odkud se expeduje. Expedice odečte z každého skladu zvlášť a zapíše vlastní pohyb. | Implementováno |
+| ADR-004 | Co znamená „dost zásob“ | Rozlišuji fyzický a disponibilní stav. Objednávka hned rezervuje, fyzicky se odečte až při expedici. | Implementováno |
+| ADR-005 | Záporný stav a inventura | Záporný stav hlídá databáze přes `CHECK` constraint (fyzický i rezervovaný stav ≥ 0, rezervovaný ≤ fyzický). Inventura nesmí jít pod rezervované množství a rozdíl zapisuje s povinným důvodem. | Implementováno |
+| ADR-006 | Varianty | Varianty (tři barvy káči) jsou samostatné produkty s vlastním kódem a zásobou, propojené přes `isVariantOfId`. | Implementováno |
+| ADR-007 | Změna objednávky | Editovat jde jen do expedice. Editace v jedné transakci uvolní staré rezervace a vytvoří nové. Storno vyžaduje důvod a ukládá ho k objednávce. | Implementováno |
+| ADR-008 | První řez | Začal jsem produktem: Prisma → repozitář → služba → API → Angular. Pak jsem stejně přidal sklad, objednávky a reporty. | Schváleno |
+| ADR-009 | Change detection | Angular 22 běží bez zone.js, takže async callbacky samy nepřekreslí. Komponenty proto po HTTP odpovědi volají `ChangeDetectorRef.markForCheck()`. | Schváleno |
+| ADR-010 | Produkty a kategorie | Produkt může být ve více kategoriích (M:N). Kategorie se jen čtou, zakládá je seed, protože klient jejich správu nechtěl. | Implementováno |
+| ADR-011 | Zásoby po skladech | `GET /api/stock/overview` vrací fyzický, rezervovaný a disponibilní stav po skladech a příznak nízkého stavu. V UI je samostatná stránka `/zasoby` s příjmem a přesunem. | Implementováno |
+| ADR-012 | Obrat po kategoriích | Počítají se jen expedované objednávky, měsíc podle data expedice, cena z `OrderItem.unitPrice`. Produkt ve více kategoriích se započítá do každé z nich, takže součet podílů může přesáhnout 100 %. | Implementováno |
+| ADR-013 | Alerty nízkých zásob | Staví se z celkové fyzické zásoby napříč sklady. Při nule je `CRITICAL`, jinak `WARNING`. Doporučené množství doplní stav na minimum, na přesném minimu doporučí aspoň 1 kus. | Implementováno |
+| ADR-014 | Vyhledávání zákazníka | Do výběru zákazníka jde psát a seznam se filtruje (viz kapitola 8). | Implementováno |
 
 ---
 
-## 9. Omezení a možná rozšíření
+## 7. Demo data
 
-- **Autentizace** není součástí zadání – systém je navržený pro jednu skladovou obsluhu.
-- **Rezervace** nejsou samostatné pohyby v auditní knize (pohyby zaznamenávají fyzické změny); dohledatelné jsou přes položky objednávek a stav `RESERVED` (ADR-004).
-- **Fulltext** v auditní knize filtruje načtenou stránku pohybů, ne server; při velkých objemech doplnit serverové hledání a stránkování.
-- **Souběh** je řešen transakcemi a opakovanou kontrolou stavu uvnitř nich; test 5 souběžných objednávek na 1 kus prošel bez přeprodeje, zátěžový test ale nebyl proveden.
-- **Kategorie** se zakládají seedem (klient nepožadoval jejich správu v UI).
-- **Docker** je nakonfigurovaný; na vývojovém stroji bez Dockeru nešel ověřit, ale `docker compose up --build` byl spuštěn uživatelem (backend healthy).
+Seed běží při startu backendu nebo ručně přes `npx ts-node prisma/seed.ts`. Je idempotentní, takže opakované spuštění nic nezduplikuje.
+
+- 7 produktů včetně dvou variant káči,
+- 2 sklady a 3 kategorie (káča je ve dvou, aby bylo M:N vidět),
+- 3 zákazníci a 3 objednávky: jedna k expedici, jedna odeslaná, jedna stornovaná,
+- 8 pohybů všech typů,
+- káča modrá má 2 kusy při minimu 10, takže dashboard hned ukáže „Co hoří“.
+
+---
+
+## 8. Úprava po konzultaci s vyučujícím
+
+Na konzultaci mi vyučující řekl, že výběr zákazníka v dialogu nové objednávky je jen obyčejný select, a chtěl, aby šlo do pole psát a zákazníka si tak rychle najít. Upravil jsem to.
+
+Jak to teď funguje:
+
+- Pole pro zákazníka je textové. Když do něj začnu psát, rozbalí se seznam a filtruje se podle jména, e-mailu i telefonu.
+- Na vybraného zákazníka se dostanu kliknutím nebo šipkami a Enterem, zavřít seznam jde Escapem.
+- Po výběru zůstane v poli jméno i e-mail, takže je vidět, kdo je vybraný.
+- Jakmile začnu psát znovu, výběr se zruší. Bez vybraného zákazníka tlačítko „Rezervovat objednávku“ zůstane zakázané, stejně jako předtím.
+- Seznam se zavře i při kliknutí mimo něj.
+
+Logika je v `frontend/src/app/components/orders/orders.page.ts`, šablona v `orders.page.html` a styl v `frontend/src/styles.css`. Přidal jsem k tomu test, který ověří, že filtr opravdu zužuje seznam a že nesmyslný text nevrátí nic.
+
+---
+
+## 9. Omezení a co bych ještě dodělal
+
+- **Přihlašování** zadání nechce, systém počítá s jednou obsluhou skladu.
+- **Rezervace** nejsou samostatný pohyb v auditní knize, protože pohyby zaznamenávají jen fyzické změny. Dohledat je jde přes položky objednávek a stav `RESERVED`.
+- **Fulltext** v pohybech filtruje jen načtenou stránku, ne celou databázi. Při větším objemu bych přidal serverové hledání a stránkování.
+- **Souběh** řeším transakcemi a opakovanou kontrolou stavu uvnitř nich. Test s pěti souběžnými objednávkami na jeden kus prošel, zátěžový test jsem ale nedělal.
+- **Kategorie** se zakládají seedem, správa v UI není.
+- **Docker** jsem spustil a funguje, backend naběhne healthy a UI jde otevřít na portu 4200.
+
+Pravidla pro práci s tímto repem (git, vrstvy, testy) jsou v `AGENTS.md`.
